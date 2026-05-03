@@ -168,40 +168,44 @@ export default function AdminDashboard({ user }) {
     },
   });
 
-  const totalStudents = studentsData?.total || 0;
-  const totalCourses = coursesData?.count || 0;
+  // Fetch all sessions
+  const { data: sessionsData } = useQuery({
+    queryKey: ["all-sessions"],
+    queryFn: async () => {
+      const res = await api.get("/api/v1/attendance/session/all");
+      return res.data.data;
+    },
+    refetchInterval: 15000,
+  });
 
-  // Sample data - replace with actual API calls
+  const totalStudents = (studentsData?.students || []).length;
+  const totalCourses = (coursesData?.courses || []).length;
+  const totalSessions = (sessionsData?.sessions || []).length;
+
+  // Build recent activities from actual data
   const recentActivities = [
+    ...(coursesData?.courses || []).slice(0, 1).map((c) => ({
+      icon: BookOpen,
+      title: "Course active",
+      sub: `${c.name || "Course"} — ${(c.enrollments || []).length} students`,
+      time: "Active",
+      color: "emerald",
+    })),
+    ...(sessionsData?.sessions || []).slice(0, 2).map((s) => ({
+      icon: PlayCircle,
+      title: "Session active",
+      sub: `${s.course?.name || "Course"} — ${new Date(s.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+      time: "Now",
+      color: "violet",
+    })),
     {
       icon: GraduationCap,
-      title: "New student registered",
-      sub: "Yaw Fosu — Computer Science",
-      time: "1h ago",
+      title: "System Status",
+      sub: `${totalStudents} students, ${totalCourses} courses, ${totalSessions} sessions`,
+      time: "Live",
       color: "blue",
     },
-    {
-      icon: BookOpen,
-      title: "Course created",
-      sub: "CS304 — Machine Learning",
-      time: "3h ago",
-      color: "emerald",
-    },
-    {
-      icon: Users,
-      title: "Student enrolled",
-      sub: "Ama Serwaa → CS301",
-      time: "5h ago",
-      color: "amber",
-    },
-    {
-      icon: PlayCircle,
-      title: "Session completed",
-      sub: "CS301 — 28 present",
-      time: "Yesterday",
-      color: "violet",
-    },
-  ];
+  ].slice(0, 4);
 
   return (
     <div className="w-full space-y-8 pb-10">

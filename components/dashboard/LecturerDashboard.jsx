@@ -13,6 +13,7 @@ import {
   Calendar,
   Clock,
   Award,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Card,
@@ -177,47 +178,63 @@ export default function LecturerDashboard({ user }) {
     enabled: !!user,
   });
 
+  // Fetch sessions
+  const { data: sessionsData } = useQuery({
+    queryKey: ["lecturer-sessions"],
+    queryFn: async () => {
+      const res = await api.get("/api/v1/attendance/session/all");
+      return res.data.data;
+    },
+    enabled: !!user,
+    refetchInterval: 15000, // Refetch every 15 seconds to show real-time updates
+  });
+
   const myCourses =
     coursesData?.courses?.filter(
       (c) => c.lecturer?.user?.email === user?.email,
     ) || [];
+
+  // Filter sessions for the current lecturer's courses
+  const mySessions = (sessionsData?.sessions || []).filter((session) => {
+    return myCourses.some((course) => course.id === session.courseId);
+  });
 
   const totalStudentsUnderMe = myCourses.reduce(
     (acc, c) => acc + (c.enrollments?.length || 0),
     0,
   );
 
-  // Sample recent activities - replace with actual API calls
-  const recentActivities = [
-    {
-      icon: PlayCircle,
-      title: "Session started",
-      sub: "CS301 — Lecture Hall B",
-      time: "2h ago",
-      color: "emerald",
-    },
-    {
-      icon: Users,
-      title: "28 students present",
-      sub: "CS301 — Data Structures",
-      time: "2h ago",
-      color: "blue",
-    },
-    {
-      icon: BookOpen,
-      title: "New student enrolled",
-      sub: "CS302 — Algorithms",
-      time: "Yesterday",
-      color: "amber",
-    },
-    {
-      icon: Award,
-      title: "Attendance report generated",
-      sub: "CS301 — 92% average",
-      time: "Yesterday",
-      color: "violet",
-    },
-  ];
+  // Build recent activities from actual sessions
+  const recentActivities = mySessions
+    .slice(0, 4)
+    .map((session, idx) => {
+      const now = new Date();
+      const isActive = now < new Date(session.endTime);
+      const presentCount = (session.attendance || []).filter(
+        (a) => a.status === "PRESENT",
+      ).length;
+
+      return {
+        icon: isActive ? PlayCircle : CheckCircle2,
+        title: isActive ? "Session in progress" : "Session completed",
+        sub: `${session.course?.name || "Course"} — ${presentCount || 0} present`,
+        time: new Date(session.startTime).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        color: isActive ? "emerald" : "blue",
+      };
+    })
+    .concat([
+      {
+        icon: Users,
+        title: "New student enrolled",
+        sub: "Check the courses page",
+        time: "Recently",
+        color: "amber",
+      },
+    ])
+    .slice(0, 4);
 
   return (
     <div className="w-full space-y-8 pb-10">
@@ -300,9 +317,15 @@ export default function LecturerDashboard({ user }) {
             />
             <StatCard
               label="Sessions Today"
-              value="3"
+              value={
+                mySessions.filter((s) => {
+                  const today = new Date();
+                  const sessionDate = new Date(s.startTime);
+                  return sessionDate.toDateString() === today.toDateString();
+                }).length
+              }
               icon={PlayCircle}
-              trend="2 completed"
+              trend="Active & upcoming"
               delay={3}
             />
             <StatCard

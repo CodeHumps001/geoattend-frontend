@@ -192,18 +192,31 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
 export default function StudentDashboard({ user }) {
   const router = useRouter();
 
-  const { data: studentData, isLoading: studentLoading } = useQuery({
-    queryKey: ["student-profile", user?.id],
+  // Fetch all courses and filter for enrolled ones
+  const { data: coursesData, isLoading: studentLoading } = useQuery({
+    queryKey: ["student-courses", user?.id],
     queryFn: async () => {
-      const res = await api.get(`/api/v1/students`);
+      const res = await api.get(`/api/v1/courses`);
       return res.data.data;
     },
     enabled: !!user,
   });
 
+  // Filter courses where the current student is enrolled
+  const allCourses = coursesData?.courses || [];
   const enrollments =
-    studentData?.students?.find((s) => s.userId === user?.id)?.enrollments ||
-    [];
+    allCourses
+      .filter((course) => {
+        return course.enrollments?.some(
+          (e) =>
+            e.student?.userId === user?.id ||
+            e.student?.user?.email === user?.email,
+        );
+      })
+      .map((course) => ({
+        course,
+        id: `${course.id}-${user?.id}`,
+      })) || [];
 
   // Sample recent activities - replace with actual API calls
   const recentActivities = [
