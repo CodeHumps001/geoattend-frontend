@@ -242,58 +242,31 @@ export default function SessionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [exporting, setExporting] = useState(false);
-  const [debugData, setDebugData] = useState(null);
 
+  // Fetch attendance records for this session
   const { data, isLoading, error } = useQuery({
     queryKey: ["session-detail", id],
     queryFn: async () => {
       const res = await api.get(`/api/v1/attendance/session/${id}`);
-      console.log("API Response:", res.data);
-      setDebugData(res.data);
       return res.data.data;
     },
     enabled: !!id,
     refetchInterval: 15000,
   });
 
-  // Debug: Log the data structure
-  console.log("Session Detail Data:", data);
-  console.log("Data keys:", data ? Object.keys(data) : "No data");
-  console.log("Session ID:", id);
+  // Extract records from the response
+  const records = data?.records || [];
+  const sessionId = data?.sessionId || id;
+  const count = data?.count || 0;
 
-  // Try to extract data from different possible structures
-  let records = [];
-  let sessionInfo = null;
+  // Since the session info (course name, code, etc.) is not in this response,
+  // we need to get it from the first record or fetch separately
+  // For now, we'll extract what we can from the records
+  const firstRecord = records[0];
+  const courseName = firstRecord?.student?.course?.name || "Session";
+  const courseCode = firstRecord?.student?.course?.code || "";
 
-  // Check different possible structures
-  if (data) {
-    // Structure 1: { records: [...], session: {...} }
-    if (data.records && Array.isArray(data.records)) {
-      records = data.records;
-      sessionInfo = data.session;
-    }
-    // Structure 2: { data: { records: [...], session: {...} } }
-    else if (data.data && data.data.records) {
-      records = data.data.records;
-      sessionInfo = data.data.session;
-    }
-    // Structure 3: Array directly
-    else if (Array.isArray(data)) {
-      records = data;
-      sessionInfo = data[0]?.session;
-    }
-    // Structure 4: Single session object with records
-    else if (data.id && data.records) {
-      sessionInfo = data;
-      records = data.records;
-    }
-    // Structure 5: Get session from first record
-    else if (records.length > 0 && records[0]?.session) {
-      sessionInfo = records[0].session;
-    }
-  }
-
-  // Calculate stats safely
+  // Calculate stats
   const presentCount = records.filter((r) => r?.status === "PRESENT").length;
   const absentCount = records.filter((r) => r?.status === "ABSENT").length;
   const attendanceRate =
@@ -301,17 +274,14 @@ export default function SessionDetailPage() {
       ? ((presentCount / records.length) * 100).toFixed(1)
       : "0";
 
-  const isActive = sessionInfo?.endTime
-    ? new Date() < new Date(sessionInfo.endTime)
-    : false;
-
+  // Since we don't have session info with dates, we'll use placeholder or fetch separately
   const handleExport = () => {
     if (records.length === 0) {
       toast.error("No attendance records to export");
       return;
     }
     setExporting(true);
-    exportToCSV(records, sessionInfo?.course?.code || "session");
+    exportToCSV(records, `session_${sessionId}`);
     setExporting(false);
   };
 
@@ -320,57 +290,24 @@ export default function SessionDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Loading session details...</p>
+          <p className="text-gray-500 text-sm">Loading attendance records...</p>
         </div>
       </div>
     );
   }
 
-  // Debug view - show raw data for troubleshooting
-  if (!sessionInfo && process.env.NODE_ENV === "development") {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <button
-          onClick={() => router.push("/sessions")}
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Sessions
-        </button>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">
-              Debug: Session Not Found
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-700 mb-4">Session ID: {id}</p>
-            <p className="text-gray-700 mb-4">API Response Structure:</p>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-xs">
-              {JSON.stringify(debugData || data, null, 2)}
-            </pre>
-            <Button onClick={() => router.push("/sessions")} className="mt-4">
-              Back to Sessions
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!sessionInfo && !isLoading) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-md mx-4">
           <CardContent className="p-8 text-center">
-            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Session Not Found
+              Failed to load session
             </h2>
             <p className="text-gray-500 text-sm mb-4">
-              The session you're looking for doesn't exist or has been deleted.
+              Please try again later.
             </p>
-            <p className="text-gray-400 text-xs mb-4">Debug: Session ID {id}</p>
             <Button onClick={() => router.push("/sessions")}>
               Back to Sessions
             </Button>
@@ -395,22 +332,11 @@ export default function SessionDetailPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                {isActive ? (
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0 font-bold">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse inline-block" />
-                    LIVE SESSION
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">COMPLETED</Badge>
-                )}
-              </div>
               <h1 className="text-2xl font-black text-gray-900">
-                {sessionInfo?.course?.name || "Session Details"}
+                Session #{sessionId}
               </h1>
               <p className="text-gray-500 text-sm mt-1">
-                {sessionInfo?.course?.code} •{" "}
-                {sessionInfo?.course?.department || "No department"}
+                {count} student{count !== 1 ? "s" : ""} recorded attendance
               </p>
             </div>
 
@@ -430,88 +356,6 @@ export default function SessionDetailPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Session Info Card */}
-        <motion.div
-          variants={fadeUp}
-          custom={0}
-          initial="hidden"
-          animate="visible"
-          className="mb-6"
-        >
-          <Card className="border-2 border-gray-100 shadow-sm">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Date</p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {sessionInfo?.date
-                        ? new Date(sessionInfo.date).toLocaleDateString(
-                            "en-GB",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            },
-                          )
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Time</p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {sessionInfo?.startTime && sessionInfo?.endTime
-                        ? `${new Date(sessionInfo.startTime).toLocaleTimeString(
-                            [],
-                            { hour: "2-digit", minute: "2-digit" },
-                          )} — ${new Date(
-                            sessionInfo.endTime,
-                          ).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}`
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">GPS Radius</p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {sessionInfo?.radiusMeters || "—"} meters
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                    <Users className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Recorded</p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {records.length} students
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
@@ -585,12 +429,9 @@ export default function SessionDetailPage() {
                 <CardTitle className="text-lg font-bold text-gray-900">
                   Attendance Records
                 </CardTitle>
-                {isActive && (
-                  <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
-                    Live updating every 15 seconds
-                  </p>
-                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Students who have marked attendance for this session
+                </p>
               </div>
             </CardHeader>
 
@@ -601,11 +442,9 @@ export default function SessionDetailPage() {
                   <p className="text-gray-500 font-semibold text-lg">
                     No attendance records yet
                   </p>
-                  {isActive && (
-                    <p className="text-gray-400 text-sm mt-2">
-                      Students will appear here when they mark attendance
-                    </p>
-                  )}
+                  <p className="text-gray-400 text-sm mt-2">
+                    Students will appear here when they mark attendance
+                  </p>
                 </div>
               ) : (
                 <>
