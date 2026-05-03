@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function DashboardPage() {
   const { user, isStudent, isLecturer, isAdmin, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
   const [scrolled, setScrolled] = useState(false);
 
   // Track scroll for header background
@@ -34,7 +34,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gray-50 rounded dark:bg-gray-900">
       {/* Top Header - Fixed */}
       <header
         className={`fixed top-0 right-0 z-40 transition-all duration-300 ${
@@ -44,18 +44,6 @@ export default function DashboardPage() {
         }`}
       >
         <div className="flex items-center justify-end px-4 py-3">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="lg:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mr-2"
-          >
-            {showMobileMenu ? (
-              <X size={20} className="text-gray-600 dark:text-gray-400" />
-            ) : (
-              <Menu size={20} className="text-gray-600 dark:text-gray-400" />
-            )}
-          </button>
-
           {/* User Avatar Dropdown */}
           <div className="relative">
             <button
@@ -150,88 +138,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
-
-      {/* Mobile Sidebar Menu */}
-      <AnimatePresence>
-        {showMobileMenu && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowMobileMenu(false)}
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            />
-            {/* Menu Panel */}
-            <motion.div
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25 }}
-              className="fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-gray-900 shadow-2xl z-50 lg:hidden overflow-y-auto"
-            >
-              <div className="p-6 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">K</span>
-                  </div>
-                  <div>
-                    <h1 className="font-black text-xl tracking-tight text-gray-900 dark:text-white">
-                      KsTU<span className="text-violet-600">.</span>
-                    </h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Smart Campus
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4">
-                <div className="mb-6 p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
-                  <p className="text-xs text-violet-600 dark:text-violet-400 font-medium mb-1">
-                    Logged in as
-                  </p>
-                  <p className="font-semibold text-gray-900 dark:text-white capitalize">
-                    {user?.name || user?.email?.split("@")[0]}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {user?.email}
-                  </p>
-                  <div className="mt-2 inline-block px-2 py-1 bg-violet-100 dark:bg-violet-500/20 rounded-lg">
-                    <span className="text-xs font-bold text-violet-600 dark:text-violet-400 uppercase">
-                      {user?.role === "STUDENT" && "Student"}
-                      {user?.role === "LECTURER" && "Lecturer"}
-                      {user?.role === "ADMIN" && "Admin"}
-                    </span>
-                  </div>
-                </div>
-                {/* Add navigation links here if needed */}
-                <button
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    logout();
-                  }}
-                  className="w-full flex items-center gap-2 px-4 py-2 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                  </svg>
-                  Sign Out
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Main Content - With proper spacing from fixed header */}
       <main className="pt-16 lg:pt-14 pb-8 px-4 lg:px-6">
