@@ -242,21 +242,56 @@ export default function SessionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [exporting, setExporting] = useState(false);
+  const [debugData, setDebugData] = useState(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["session-detail", id],
     queryFn: async () => {
       const res = await api.get(`/api/v1/attendance/session/${id}`);
+      console.log("API Response:", res.data);
+      setDebugData(res.data);
       return res.data.data;
     },
     enabled: !!id,
     refetchInterval: 15000,
   });
 
-  // Extract data safely
-  const records = Array.isArray(data?.records) ? data.records : [];
-  const sessionInfo =
-    data?.session || (records.length > 0 ? records[0]?.session : null);
+  // Debug: Log the data structure
+  console.log("Session Detail Data:", data);
+  console.log("Data keys:", data ? Object.keys(data) : "No data");
+  console.log("Session ID:", id);
+
+  // Try to extract data from different possible structures
+  let records = [];
+  let sessionInfo = null;
+
+  // Check different possible structures
+  if (data) {
+    // Structure 1: { records: [...], session: {...} }
+    if (data.records && Array.isArray(data.records)) {
+      records = data.records;
+      sessionInfo = data.session;
+    }
+    // Structure 2: { data: { records: [...], session: {...} } }
+    else if (data.data && data.data.records) {
+      records = data.data.records;
+      sessionInfo = data.data.session;
+    }
+    // Structure 3: Array directly
+    else if (Array.isArray(data)) {
+      records = data;
+      sessionInfo = data[0]?.session;
+    }
+    // Structure 4: Single session object with records
+    else if (data.id && data.records) {
+      sessionInfo = data;
+      records = data.records;
+    }
+    // Structure 5: Get session from first record
+    else if (records.length > 0 && records[0]?.session) {
+      sessionInfo = records[0].session;
+    }
+  }
 
   // Calculate stats safely
   const presentCount = records.filter((r) => r?.status === "PRESENT").length;
@@ -291,19 +326,30 @@ export default function SessionDetailPage() {
     );
   }
 
-  if (error) {
+  // Debug view - show raw data for troubleshooting
+  if (!sessionInfo && process.env.NODE_ENV === "development") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="max-w-md mx-4">
-          <CardContent className="p-8 text-center">
-            <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Failed to load session
-            </h2>
-            <p className="text-gray-500 text-sm mb-4">
-              The session may have been deleted or you don't have access.
-            </p>
-            <Button onClick={() => router.push("/sessions")}>
+      <div className="min-h-screen bg-gray-50 p-8">
+        <button
+          onClick={() => router.push("/sessions")}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Sessions
+        </button>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-red-600">
+              Debug: Session Not Found
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">Session ID: {id}</p>
+            <p className="text-gray-700 mb-4">API Response Structure:</p>
+            <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-xs">
+              {JSON.stringify(debugData || data, null, 2)}
+            </pre>
+            <Button onClick={() => router.push("/sessions")} className="mt-4">
               Back to Sessions
             </Button>
           </CardContent>
@@ -312,7 +358,7 @@ export default function SessionDetailPage() {
     );
   }
 
-  if (!sessionInfo) {
+  if (!sessionInfo && !isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-md mx-4">
@@ -322,8 +368,9 @@ export default function SessionDetailPage() {
               Session Not Found
             </h2>
             <p className="text-gray-500 text-sm mb-4">
-              The session you're looking for doesn't exist.
+              The session you're looking for doesn't exist or has been deleted.
             </p>
+            <p className="text-gray-400 text-xs mb-4">Debug: Session ID {id}</p>
             <Button onClick={() => router.push("/sessions")}>
               Back to Sessions
             </Button>
@@ -602,7 +649,7 @@ export default function SessionDetailPage() {
           </Card>
         </motion.div>
 
-        {/* Achievement / Summary Card (if high attendance) */}
+        {/* Achievement / Summary Card */}
         {records.length > 0 && parseFloat(attendanceRate) >= 80 && (
           <motion.div
             variants={fadeUp}
@@ -622,8 +669,7 @@ export default function SessionDetailPage() {
                       Great Attendance! 🎉
                     </p>
                     <p className="text-xs text-gray-600 mt-1">
-                      {attendanceRate}% attendance rate for this session. Keep
-                      up the good work!
+                      {attendanceRate}% attendance rate for this session.
                     </p>
                   </div>
                 </div>
