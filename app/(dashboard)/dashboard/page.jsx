@@ -1,49 +1,15 @@
 "use client";
-import AdminDashboard from "@/components/dashboard/AdminDashboard";
-import LecturerDashboard from "@/components/dashboard/LecturerDashboard";
-import StudentDashboard from "@/components/dashboard/StudentDashboard";
+
 import { useAuth } from "@/hooks/useAuth";
-import {
-  User,
-  ChevronDown,
-  Bell,
-  Search,
-  Sparkles,
-  Sun,
-  Moon,
-} from "lucide-react";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "next-themes";
+import StudentDashboard from "@/components/dashboard/StudentDashboard";
+import LecturerDashboard from "@/components/dashboard/LecturerDashboard";
+import AdminDashboard from "@/components/dashboard/AdminDashboard";
+import { Zap } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, isStudent, isLecturer, isAdmin, logout } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { user, isStudent, isLecturer, isAdmin } = useAuth();
 
-  // Track scroll for header background
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Get user initials for avatar
-  const getInitials = () => {
-    if (!user?.name) return "U";
-    return user.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Get greeting based on time
-  const getGreeting = () => {
+  const greeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
     if (hour < 17) return "Good afternoon";
@@ -51,172 +17,43 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-indigo-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950/20">
-      {/* Modern Glass Header */}
-      <header
-        className={`sticky top-0 z-30 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 shadow-sm"
-            : "bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border-b border-gray-100/50 dark:border-gray-800/50"
-        }`}
-      >
-        <div className="flex items-center justify-between px-6 lg:px-8 py-4">
-          {/* Left side - Welcome Section */}
-          <div className="flex items-center gap-4">
-            <div className="hidden lg:block">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-violet-500" />
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {getGreeting()}
-                </p>
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                {user?.name?.split(" ")[0] || "User"}!
-              </h1>
-            </div>
-          </div>
-
-          {/* Right side - Actions & User Menu */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+      {/* Top header */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-10 sm:pt-12 pb-4 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-5 h-5 text-gray-500" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-500" />
-              )}
-            </button>
-
-            {/* Notifications */}
-            <button className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <Bell className="w-5 h-5 text-gray-500" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
-
-            {/* User Avatar Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
-              >
-                {/* Avatar */}
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-md shadow-violet-200/50 dark:shadow-violet-900/30">
-                    <span className="text-white font-bold text-sm">
-                      {getInitials()}
-                    </span>
-                  </div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
-                </div>
-
-                {/* User Info - Hidden on mobile */}
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
-                    {user?.name || user?.email?.split("@")[0]}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {user?.email}
-                  </p>
-                </div>
-
-                {/* Chevron - Hidden on mobile */}
-                <ChevronDown
-                  size={14}
-                  className={`hidden md:block text-gray-400 transition-transform duration-200 ${
-                    showUserMenu ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {/* Dropdown Menu */}
-              <AnimatePresence>
-                {showUserMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50"
-                  >
-                    <div className="p-3 border-b border-gray-100 dark:border-gray-700">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                        Signed in as
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          window.location.href = "/profile";
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-                      >
-                        <User size={14} />
-                        Profile Settings
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          logout();
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
-                      >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                          <polyline points="16 17 21 12 16 7" />
-                          <line x1="21" y1="12" x2="9" y2="12" />
-                        </svg>
-                        Sign Out
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200 dark:shadow-blue-900/30">
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Welcome Section - Visible on mobile only */}
-          <div className="lg:hidden mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-4 h-4 text-violet-500" />
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {getGreeting()}
+            <div>
+              <h1 className="font-black text-gray-900 dark:text-white text-base sm:text-lg leading-none">
+                Klassrep
+              </h1>
+              <p className="text-gray-400 dark:text-gray-500 text-xs">
+                {greeting()}, {user?.name?.split(" ")[0]}
               </p>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {user?.name?.split(" ")[0] || "User"}!
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Welcome back to your dashboard
-            </p>
           </div>
-
-          {/* Dashboard Content */}
-          {isStudent && <StudentDashboard user={user} />}
-          {isLecturer && <LecturerDashboard user={user} />}
-          {isAdmin && <AdminDashboard user={user} />}
+          <div
+            className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+              isStudent
+                ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                : isLecturer
+                  ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                  : "bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
+            }`}
+          >
+            {user?.role}
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 sm:px-6 py-5 sm:py-6 max-w-7xl mx-auto">
+        {isStudent && <StudentDashboard user={user} />}
+        {isLecturer && <LecturerDashboard user={user} />}
+        {isAdmin && <AdminDashboard user={user} />}
+      </div>
     </div>
   );
 }
