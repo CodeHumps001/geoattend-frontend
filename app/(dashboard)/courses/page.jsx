@@ -230,7 +230,7 @@ export default function CoursesPage() {
   const { user, isStudent, isLecturer, isAdmin } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = (useState < "grid") | ("list" > "grid");
+  const [viewMode, setViewMode] = useState("grid"); // FIXED: removed TypeScript syntax
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);

@@ -280,7 +280,7 @@ export default function SessionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  const [viewMode, setViewMode] = (useState < "cards") | ("table" > "cards");
+  const [viewMode, setViewMode] = useState("cards"); // FIXED: removed TypeScript syntax
   const [form, setForm] = useState({
     courseId: "",
     startTime: "",

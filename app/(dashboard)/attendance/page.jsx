@@ -20,6 +20,9 @@ import {
   Users,
   Award,
   Sparkles,
+  TrendingUp,
+  ShieldCheck,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +40,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -47,7 +52,7 @@ const fadeUp = {
   }),
 };
 
-// Beautiful Attendance Card Component
+// Enhanced Attendance Card Component
 function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
   const now = new Date();
   const start = new Date(session.startTime);
@@ -62,9 +67,10 @@ function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
       animate="visible"
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
+      className="h-full"
     >
       <Card
-        className={`relative overflow-hidden transition-all duration-300 ${
+        className={`relative overflow-hidden transition-all duration-300 h-full ${
           isActive
             ? "border-2 border-blue-200 shadow-xl shadow-blue-100/50 bg-gradient-to-br from-white to-blue-50/30"
             : isFuture
@@ -75,7 +81,7 @@ function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
         {/* Animated Live Badge */}
         {isActive && (
           <div className="absolute top-0 right-0">
-            <div className="absolute -top-1 -right-1 w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full blur-xl opacity-60 animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full blur-xl opacity-60 animate-pulse" />
             <Badge className="absolute top-3 right-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 shadow-lg z-10">
               <span className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse" />
               LIVE NOW
@@ -89,23 +95,21 @@ function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <Badge
                   variant="outline"
-                  className="bg-white/80 text-gray-700 border-gray-200"
+                  className="bg-white/80 text-gray-700 border-gray-200 font-mono"
                 >
                   {session.course?.code}
                 </Badge>
-                {session.course?.department && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-gray-100 text-gray-600"
-                  >
-                    {session.course.department}
-                  </Badge>
-                )}
+                <Badge
+                  variant="secondary"
+                  className="bg-gray-100 text-gray-600"
+                >
+                  {session.course?.department}
+                </Badge>
               </div>
-              <CardTitle className="text-xl font-bold text-gray-900 mb-1">
+              <CardTitle className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
                 {session.course?.name || "Unknown Course"}
               </CardTitle>
-              <CardDescription className="flex items-center gap-3 text-xs">
+              <CardDescription className="flex items-center gap-3 text-xs flex-wrap">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   {new Date(session.startTime).toLocaleDateString()}
@@ -206,7 +210,7 @@ function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
 }
 
 // Statistics Card Component
-function StatsCard({ title, value, icon: Icon, color, delay }) {
+function StatsCard({ title, value, icon: Icon, color, delay, trend }) {
   const colors = {
     blue: "from-blue-500 to-blue-600",
     emerald: "from-emerald-500 to-emerald-600",
@@ -221,15 +225,21 @@ function StatsCard({ title, value, icon: Icon, color, delay }) {
       initial="hidden"
       animate="visible"
     >
-      <Card className="relative overflow-hidden">
+      <Card className="relative overflow-hidden border-gray-100 hover:shadow-lg transition-all duration-300 group">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
               <p className="text-3xl font-bold text-gray-900">{value}</p>
+              {trend && (
+                <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  {trend}
+                </p>
+              )}
             </div>
             <div
-              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center shadow-lg`}
+              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
             >
               <Icon className="w-6 h-6 text-white" />
             </div>
@@ -335,6 +345,7 @@ export default function AttendancePage() {
   const [markedSessions, setMarkedSessions] = useState([]);
   const [showGPSTest, setShowGPSTest] = useState(false);
   const [customLocation, setCustomLocation] = useState(null);
+  const [activeTab, setActiveTab] = useState("upcoming");
 
   const studentId = user?.student?.id;
   const isValidStudentId = studentId && !isNaN(Number(studentId));
@@ -374,15 +385,28 @@ export default function AttendancePage() {
     enrolledCourseIds.includes(session.courseId),
   );
 
-  // Statistics
-  const totalSessions = enrolledSessions.length;
-  const activeSessions = enrolledSessions.filter((s) => {
-    const now = new Date();
+  // Categorize sessions
+  const now = new Date();
+  const activeSessionsList = enrolledSessions.filter((s) => {
     const start = new Date(s.startTime);
     const end = new Date(s.endTime);
     return now >= start && now <= end;
-  }).length;
-  const completedSessions = markedSessions.length;
+  });
+  const upcomingSessionsList = enrolledSessions.filter((s) => {
+    const start = new Date(s.startTime);
+    return now < start;
+  });
+  const completedSessionsList = enrolledSessions.filter((s) => {
+    const end = new Date(s.endTime);
+    return now > end;
+  });
+
+  // Statistics
+  const totalSessions = enrolledSessions.length;
+  const activeSessions = activeSessionsList.length;
+  const totalMarked = markedSessions.length;
+  const attendanceRate =
+    totalSessions > 0 ? (totalMarked / totalSessions) * 100 : 0;
 
   const markAttendance = async (sessionId) => {
     if (!isValidStudentId) {
@@ -477,14 +501,14 @@ export default function AttendancePage() {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 pt-8 pb-6 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Mark Attendance
+                Attendance Dashboard
               </h1>
               <p className="text-gray-500 text-sm mt-1">
                 {hasEnrolledCourses
-                  ? "Select a course below to mark your attendance"
+                  ? `You have ${totalSessions} session${totalSessions !== 1 ? "s" : ""} available`
                   : "You are not enrolled in any courses yet"}
               </p>
             </div>
@@ -500,10 +524,10 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Section */}
         {hasEnrolledCourses && totalSessions > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard
               title="Total Sessions"
               value={totalSessions}
@@ -512,69 +536,187 @@ export default function AttendancePage() {
               delay={0}
             />
             <StatsCard
-              title="Active Now"
+              title="Active Sessions"
               value={activeSessions}
               icon={Clock}
               color="emerald"
               delay={1}
+              trend="Mark now!"
             />
             <StatsCard
-              title="Completed"
-              value={completedSessions}
+              title="Marked Complete"
+              value={totalMarked}
               icon={CheckCircle2}
               color="purple"
               delay={2}
             />
+            <StatsCard
+              title="Attendance Rate"
+              value={`${Math.round(attendanceRate)}%`}
+              icon={TrendingUp}
+              color="orange"
+              delay={3}
+            />
           </div>
         )}
 
-        {/* Sessions List */}
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-24 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
+        {/* Tabs for Session Categories */}
+        {hasEnrolledCourses && totalSessions > 0 && (
+          <Tabs
+            defaultValue="active"
+            className="mb-6"
+            onValueChange={setActiveTab}
+          >
+            <TabsList className="bg-gray-100 rounded-xl p-1 h-12 w-full max-w-md">
+              <TabsTrigger
+                value="active"
+                className="flex-1 rounded-lg font-semibold"
+              >
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Active ({activeSessionsList.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="upcoming"
+                className="flex-1 rounded-lg font-semibold"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Upcoming ({upcomingSessionsList.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="completed"
+                className="flex-1 rounded-lg font-semibold"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Completed ({completedSessionsList.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="active" className="mt-6">
+              {activeSessionsList.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <PlayCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 font-semibold text-lg">
+                      No active sessions
+                    </p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Check back later for live sessions
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {activeSessionsList.map((session) => (
+                    <AttendanceCard
+                      key={session.id}
+                      session={session}
+                      onMark={markAttendance}
+                      marking={marking}
+                      alreadyMarked={markedSessions.includes(session.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="upcoming" className="mt-6">
+              {upcomingSessionsList.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 font-semibold text-lg">
+                      No upcoming sessions
+                    </p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Sessions will appear here when scheduled
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {upcomingSessionsList.map((session) => (
+                    <AttendanceCard
+                      key={session.id}
+                      session={session}
+                      onMark={markAttendance}
+                      marking={marking}
+                      alreadyMarked={markedSessions.includes(session.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="completed" className="mt-6">
+              {completedSessionsList.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <CheckCircle2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 font-semibold text-lg">
+                      No completed sessions
+                    </p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Completed sessions will appear here
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {completedSessionsList.map((session) => (
+                    <AttendanceCard
+                      key={session.id}
+                      session={session}
+                      onMark={markAttendance}
+                      marking={marking}
+                      alreadyMarked={markedSessions.includes(session.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">Loading your sessions...</p>
+            </div>
           </div>
-        ) : !hasEnrolledCourses ? (
-          <Card className="text-center py-12">
+        )}
+
+        {/* No Courses State */}
+        {!isLoading && !hasEnrolledCourses && (
+          <Card className="text-center py-16">
             <CardContent>
-              <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-semibold text-lg">
+              <BookOpen className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-semibold text-xl">
                 No enrolled courses
               </p>
-              <p className="text-gray-400 text-sm mt-1">
-                Ask your admin to enroll you in courses
+              <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
+                You haven't been enrolled in any courses yet. Please contact
+                your administrator to get started.
               </p>
             </CardContent>
           </Card>
-        ) : enrolledSessions.length === 0 ? (
-          <Card className="text-center py-12">
+        )}
+
+        {/* No Sessions State (has courses but no sessions) */}
+        {!isLoading && hasEnrolledCourses && totalSessions === 0 && (
+          <Card className="text-center py-16">
             <CardContent>
-              <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-semibold text-lg">
-                No active sessions
+              <Clock className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-semibold text-xl">
+                No sessions available
               </p>
-              <p className="text-gray-400 text-sm mt-1">
-                When a lecturer starts a session, it will appear here
+              <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
+                Your lecturers haven't started any sessions yet. When they do,
+                you'll see them here.
               </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-4">
-            {enrolledSessions.map((session) => (
-              <AttendanceCard
-                key={session.id}
-                session={session}
-                onMark={markAttendance}
-                marking={marking}
-                alreadyMarked={markedSessions.includes(session.id)}
-              />
-            ))}
-          </div>
         )}
       </div>
 
@@ -584,7 +726,6 @@ export default function AttendancePage() {
         onClose={() => setShowGPSTest(false)}
         onUseLocation={(location) => {
           setCustomLocation(location);
-          // Optionally auto-mark the first active session
         }}
       />
     </div>
