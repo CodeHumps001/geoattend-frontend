@@ -76,6 +76,7 @@ function StatCard({ label, value, icon: Icon, trend, delay, subtext }) {
 // Course Card Component
 function CourseCard({ course, percentage, delay }) {
   const router = useRouter();
+  const studentCount = course._count?.enrollments || 0;
 
   return (
     <motion.div
@@ -104,7 +105,7 @@ function CourseCard({ course, percentage, delay }) {
                     className="bg-gray-100 dark:bg-gray-800"
                   >
                     <Users className="w-3 h-3 mr-1" />
-                    {course._count?.enrollments || 0} students
+                    {studentCount} students
                   </Badge>
                   {percentage && (
                     <Badge className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
@@ -133,12 +134,9 @@ function CourseCard({ course, percentage, delay }) {
                 )}
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <Clock className="w-3 h-3" />
-                    Lecturer ID: {course.lecturerId}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
                     <Calendar className="w-3 h-3" />
-                    Created: {new Date(course.createdAt).toLocaleDateString()}
+                    Lecturer:{" "}
+                    {course.lecturer?.user?.name || `ID: ${course.lecturerId}`}
                   </div>
                 </div>
               </div>
@@ -189,99 +187,114 @@ export default function StudentDashboard({ user }) {
   const { data: studentRecord, isLoading: studentLoading } = useQuery({
     queryKey: ["student-record", user?.id],
     queryFn: async () => {
-      // First, get all students and find the one matching the user email
+      // Fetch all students and find the one matching the user email
       const res = await api.get("/api/v1/students");
       const students = res.data.data;
-      // Find student where user.email matches
+      // Find student where user.email matches (since the student includes user relation)
       const currentStudent = students.find(
         (s) => s.user?.email === user?.email,
       );
+
+      if (!currentStudent) {
+        console.error("No student record found for user:", user?.email);
+      }
+
       return currentStudent;
     },
     enabled: !!user,
   });
 
-  // Step 2: Fetch enrolled courses using the student ID
+  // Step 2: Fetch all courses
   const { data: coursesData, isLoading: coursesLoading } = useQuery({
-    queryKey: ["student-courses", studentRecord?.id],
+    queryKey: ["all-courses"],
     queryFn: async () => {
-      // Fetch all courses
       const res = await api.get("/api/v1/courses");
-      const allCourses = res.data.data.courses || res.data.data || [];
-
-      // Filter courses where this student is enrolled
-      const enrolledCourses = allCourses.filter((course) =>
-        course.enrollments?.some(
-          (enrollment) => enrollment.studentId === studentRecord?.id,
-        ),
-      );
-
-      return enrolledCourses;
+      return res.data.data.courses;
     },
-    enabled: !!studentRecord?.id,
+    enabled: true,
   });
 
-  // Optional: Fetch attendance percentages for each course
-  const { data: attendanceData } = useQuery({
-    queryKey: ["student-attendance", studentRecord?.id],
-    queryFn: async () => {
-      if (!studentRecord?.id) return {};
-      const percentages = {};
-      for (const course of coursesData || []) {
-        try {
-          const res = await api.get(
-            `/api/v1/students/${studentRecord.id}/attendance/${course.id}`,
-          );
-          percentages[course.id] = res.data.data.percentage || 0;
-        } catch (error) {
-          console.error(
-            `Failed to fetch attendance for course ${course.id}:`,
-            error,
-          );
-          percentages[course.id] = 0;
+  // Step 3: For each enrolled course, fetch attendance percentage
+  // First, determine which courses the student is enrolled in
+  const enrolledCourseIds =
+    studentRecord?.enrollments?.map((e) => e.courseId) || [];
+
+  // Filter courses that the student is enrolled in
+  const enrolledCourses =
+    coursesData?.filter((course) => enrolledCourseIds.includes(course.id)) ||
+    [];
+
+  // Fetch attendance percentage for each enrolled course
+  const { data: attendancePercentages, isLoading: attendanceLoading } =
+    useQuery({
+      queryKey: [
+        "attendance-percentages",
+        studentRecord?.id,
+        enrolledCourseIds,
+      ],
+      queryFn: async () => {
+        if (!studentRecord?.id || enrolledCourseIds.length === 0) return {};
+
+        const percentages = {};
+        for (const courseId of enrolledCourseIds) {
+          try {
+            const res = await api.get(
+              `/api/v1/students/${studentRecord.id}/attendance/${courseId}`,
+            );
+            percentages[courseId] = res.data.data.percentage || 0;
+          } catch (error) {
+            console.error(
+              `Failed to fetch attendance for course ${courseId}:`,
+              error,
+            );
+            percentages[courseId] = 0;
+          }
         }
-      }
-      return percentages;
-    },
-    enabled: !!studentRecord?.id && !!coursesData && coursesData.length > 0,
-  });
+        return percentages;
+      },
+      enabled: !!studentRecord?.id && enrolledCourseIds.length > 0,
+    });
 
-  const enrolledCourses = coursesData || [];
   const totalEnrolled = enrolledCourses.length;
 
-  // Calculate average attendance from fetched data
+  // Calculate average attendance
+  const attendanceValues = Object.values(attendancePercentages || {});
   const averageAttendance =
-    attendanceData && Object.keys(attendanceData).length > 0
+    attendanceValues.length > 0
       ? Math.round(
-          Object.values(attendanceData).reduce((a, b) => a + b, 0) /
-            Object.values(attendanceData).length,
+          attendanceValues.reduce((a, b) => a + b, 0) / attendanceValues.length,
         )
-      : 87.5;
+      : 0;
 
-  const perfectCourses = Object.values(attendanceData || {}).filter(
-    (p) => p >= 100,
-  ).length;
+  const perfectCourses = attendanceValues.filter((p) => p >= 100).length;
   const weeklyAttendance = Math.min(totalEnrolled * 2, 8);
 
-  // Sample recent activities - replace with actual API call to /api/v1/attendance/history
+  // Debug logging
+  console.log("User:", user);
+  console.log("Student Record:", studentRecord);
+  console.log("Enrolled Course IDs:", enrolledCourseIds);
+  console.log("Enrolled Courses:", enrolledCourses);
+  console.log("Attendance Percentages:", attendancePercentages);
+
+  const isLoading = studentLoading || coursesLoading || attendanceLoading;
+
+  // Sample recent activities (replace with actual API call)
   const recentActivities = [
     {
       icon: CheckCircle2,
       title: "Marked present",
-      sub:
-        enrolledCourses[0]?.code ||
-        "CS301" + " — " + enrolledCourses[0]?.name ||
-        "Data Structures",
+      sub: enrolledCourses[0]
+        ? `${enrolledCourses[0].code} — ${enrolledCourses[0].name}`
+        : "CS301 — Data Structures",
       time: "2h ago",
       color: "green",
     },
     {
       icon: CheckCircle2,
       title: "Marked present",
-      sub:
-        enrolledCourses[1]?.code ||
-        "CS302" + " — " + enrolledCourses[1]?.name ||
-        "Algorithms",
+      sub: enrolledCourses[1]
+        ? `${enrolledCourses[1].code} — ${enrolledCourses[1].name}`
+        : "CS302 — Algorithms",
       time: "Yesterday",
       color: "green",
     },
@@ -300,14 +313,6 @@ export default function StudentDashboard({ user }) {
       color: "blue",
     },
   ];
-
-  const isLoading = studentLoading || coursesLoading;
-
-  // Debug logging to see the actual data structure
-  console.log("User:", user);
-  console.log("Student Record:", studentRecord);
-  console.log("Enrolled Courses:", enrolledCourses);
-  console.log("Attendance Data:", attendanceData);
 
   return (
     <div className="w-full space-y-8 pb-10">
@@ -376,7 +381,7 @@ export default function StudentDashboard({ user }) {
               label="Avg Attendance"
               value={`${averageAttendance}%`}
               icon={TrendingUp}
-              trend="+5.2% vs last month"
+              trend={averageAttendance > 80 ? "Excellent!" : "Keep improving"}
               delay={2}
             />
             <StatCard
@@ -443,7 +448,7 @@ export default function StudentDashboard({ user }) {
                 <CourseCard
                   key={course.id}
                   course={course}
-                  percentage={attendanceData?.[course.id] || 85 - i * 5}
+                  percentage={attendancePercentages?.[course.id] || 0}
                   delay={i}
                 />
               ))}
