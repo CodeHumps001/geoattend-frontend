@@ -173,26 +173,30 @@ export default function AttendancePage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [marking, setMarking] = useState(null);
+  const [markedSessions, setMarkedSessions] = useState([]);
 
-  // Get student ID from user object
+  // ✅ FIX: Safely get student ID with validation
   const studentId = user?.student?.id;
 
-  // Get enrolled courses for this student
+  // ✅ FIX: Only fetch if studentId is valid (exists and is a number)
+  const isValidStudentId = studentId && !isNaN(Number(studentId));
+
+  // Get enrolled courses for this student - ONLY if studentId is valid
   const { data: studentDetail, isLoading: studentLoading } = useQuery({
     queryKey: ["student-detail", studentId],
     queryFn: async () => {
-      if (!studentId) return null;
+      if (!isValidStudentId) return null;
       const res = await api.get(`/api/v1/students/${studentId}`);
       return res.data.data.student;
     },
-    enabled: !!studentId,
+    enabled: isValidStudentId, // ✅ Only run when studentId is valid
   });
 
   // Get enrolled course IDs
   const enrolledCourseIds =
     studentDetail?.enrollments?.map((e) => e.courseId) || [];
 
-  // Get all sessions
+  // Get all sessions - always fetch, but handle empty state
   const {
     data: sessionsData,
     isLoading: sessionsLoading,
@@ -200,40 +204,28 @@ export default function AttendancePage() {
   } = useQuery({
     queryKey: ["all-sessions"],
     queryFn: async () => {
-      const res = await api.get("/api/v1/attendance/session/all");
-      return res.data.data.sessions || [];
+      try {
+        const res = await api.get("/api/v1/attendance/session/all");
+        return res.data.data.sessions || [];
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err);
+        return [];
+      }
     },
     refetchInterval: 30000,
   });
-
-  // Show error if sessions fetch fails
-  if (sessionsError) {
-    console.error("Failed to fetch sessions:", sessionsError);
-    toast.error("Failed to load sessions. Please refresh the page.");
-  }
 
   // Filter sessions to only those in enrolled courses
   const enrolledSessions = (sessionsData || []).filter((session) =>
     enrolledCourseIds.includes(session.courseId),
   );
 
-  // Get marked attendance status - FIXED: Don't fetch for each session individually
-  // Instead, fetch all attendance records for this student in one go
-  const { data: attendanceRecords, refetch: refetchAttendance } = useQuery({
-    queryKey: ["student-attendance", studentId],
-    queryFn: async () => {
-      if (!studentId) return [];
-      // You need to create this endpoint in your backend
-      // For now, we'll track marked sessions locally
-      return [];
-    },
-    enabled: !!studentId,
-  });
-
-  // Track marked sessions locally after successful marking
-  const [markedSessions, setMarkedSessions] = useState([]);
-
   const markAttendance = async (sessionId) => {
+    if (!isValidStudentId) {
+      toast.error("Student profile not found. Please contact admin.");
+      return;
+    }
+
     setMarking(sessionId);
 
     try {
@@ -253,8 +245,8 @@ export default function AttendancePage() {
 
       // Mark attendance using your backend endpoint
       const res = await api.post("/api/v1/attendance/mark", {
-        studentId,
-        sessionId,
+        studentId: Number(studentId), // ✅ Ensure it's a number
+        sessionId: Number(sessionId), // ✅ Ensure it's a number
         latitude,
         longitude,
       });
@@ -300,7 +292,8 @@ export default function AttendancePage() {
   const isLoading = studentLoading || sessionsLoading;
   const hasEnrolledCourses = enrolledCourseIds.length > 0;
 
-  if (!studentId) {
+  // ✅ FIX: Better loading state handling
+  if (!isValidStudentId && !isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="max-w-md mx-4">
