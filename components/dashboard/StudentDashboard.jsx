@@ -74,9 +74,8 @@ function StatCard({ label, value, icon: Icon, trend, delay, subtext }) {
 }
 
 // Course Card Component
-function CourseCard({ course, percentage, delay }) {
+function CourseCard({ course, enrollment, percentage, delay }) {
   const router = useRouter();
-  const studentCount = course._count?.enrollments || 0;
 
   return (
     <motion.div
@@ -105,11 +104,11 @@ function CourseCard({ course, percentage, delay }) {
                     className="bg-gray-100 dark:bg-gray-800"
                   >
                     <Users className="w-3 h-3 mr-1" />
-                    {studentCount} students
+                    Enrolled
                   </Badge>
-                  {percentage && (
+                  {percentage && percentage !== "0%" && (
                     <Badge className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
-                      {percentage}% Attendance
+                      {percentage} Attendance
                     </Badge>
                   )}
                 </div>
@@ -119,24 +118,24 @@ function CourseCard({ course, percentage, delay }) {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   {course.department} • {course.semester}
                 </p>
-                {percentage && (
+                {percentage && percentage !== "0%" && (
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-500 dark:text-gray-400">
                         Attendance Rate
                       </span>
                       <span className="font-semibold text-gray-700 dark:text-gray-300">
-                        {percentage}%
+                        {percentage}
                       </span>
                     </div>
-                    <Progress value={percentage} className="h-2" />
+                    <Progress value={parseFloat(percentage)} className="h-2" />
                   </div>
                 )}
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-1 text-xs text-gray-400">
                     <Calendar className="w-3 h-3" />
-                    Lecturer:{" "}
-                    {course.lecturer?.user?.name || `ID: ${course.lecturerId}`}
+                    Enrolled:{" "}
+                    {new Date(enrollment.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>
@@ -183,82 +182,76 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
 export default function StudentDashboard({ user }) {
   const router = useRouter();
 
-  // Step 1: Get the student record for the logged-in user
-  const { data: studentRecord, isLoading: studentLoading } = useQuery({
-    queryKey: ["student-record", user?.id],
+  // FIRST: Get the student record with enrollments using getStudentById
+  // We need to find the student ID first by fetching all students
+  const { data: allStudents, isLoading: studentsLoading } = useQuery({
+    queryKey: ["all-students"],
     queryFn: async () => {
-      // Fetch all students and find the one matching the user email
       const res = await api.get("/api/v1/students");
-      const students = res.data.data;
-      // Find student where user.email matches (since the student includes user relation)
-      const currentStudent = students.find(
-        (s) => s.user?.email === user?.email,
-      );
-
-      if (!currentStudent) {
-        console.error("No student record found for user:", user?.email);
-      }
-
-      return currentStudent;
+      return res.data.data.students;
     },
     enabled: !!user,
   });
 
-  // Step 2: Fetch all courses
-  const { data: coursesData, isLoading: coursesLoading } = useQuery({
-    queryKey: ["all-courses"],
+  // Find the student ID that matches the current user
+  const currentStudent = allStudents?.find(
+    (s) => s.user?.email === user?.email,
+  );
+  const studentId = currentStudent?.id;
+
+  // SECOND: Fetch the full student details with enrollments using getStudentById
+  const { data: studentDetail, isLoading: studentDetailLoading } = useQuery({
+    queryKey: ["student-detail", studentId],
     queryFn: async () => {
-      const res = await api.get("/api/v1/courses");
-      return res.data.data.courses;
+      const res = await api.get(`/api/v1/students/${studentId}`);
+      return res.data.data.student;
     },
-    enabled: true,
+    enabled: !!studentId,
   });
 
-  // Step 3: For each enrolled course, fetch attendance percentage
-  // First, determine which courses the student is enrolled in
-  const enrolledCourseIds =
-    studentRecord?.enrollments?.map((e) => e.courseId) || [];
+  // Extract enrollments with course data
+  const enrollments = studentDetail?.enrollments || [];
+  const enrolledCourses = enrollments.map((enrollment) => ({
+    course: enrollment.course,
+    enrollment: enrollment,
+  }));
 
-  // Filter courses that the student is enrolled in
-  const enrolledCourses =
-    coursesData?.filter((course) => enrolledCourseIds.includes(course.id)) ||
-    [];
+  // THIRD: Fetch attendance percentage for each enrolled course
+  const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
+    queryKey: [
+      "attendance-percentages",
+      studentId,
+      enrolledCourses.map((e) => e.course.id),
+    ],
+    queryFn: async () => {
+      if (!studentId || enrolledCourses.length === 0) return {};
 
-  // Fetch attendance percentage for each enrolled course
-  const { data: attendancePercentages, isLoading: attendanceLoading } =
-    useQuery({
-      queryKey: [
-        "attendance-percentages",
-        studentRecord?.id,
-        enrolledCourseIds,
-      ],
-      queryFn: async () => {
-        if (!studentRecord?.id || enrolledCourseIds.length === 0) return {};
-
-        const percentages = {};
-        for (const courseId of enrolledCourseIds) {
-          try {
-            const res = await api.get(
-              `/api/v1/students/${studentRecord.id}/attendance/${courseId}`,
-            );
-            percentages[courseId] = res.data.data.percentage || 0;
-          } catch (error) {
-            console.error(
-              `Failed to fetch attendance for course ${courseId}:`,
-              error,
-            );
-            percentages[courseId] = 0;
-          }
+      const percentages = {};
+      for (const { course } of enrolledCourses) {
+        try {
+          const res = await api.get(
+            `/api/v1/students/${studentId}/attendance/${course.id}`,
+          );
+          percentages[course.id] = res.data.data.percentage;
+        } catch (error) {
+          console.error(
+            `Failed to fetch attendance for course ${course.id}:`,
+            error,
+          );
+          percentages[course.id] = "0%";
         }
-        return percentages;
-      },
-      enabled: !!studentRecord?.id && enrolledCourseIds.length > 0,
-    });
+      }
+      return percentages;
+    },
+    enabled: !!studentId && enrolledCourses.length > 0,
+  });
 
   const totalEnrolled = enrolledCourses.length;
 
   // Calculate average attendance
-  const attendanceValues = Object.values(attendancePercentages || {});
+  const attendanceValues = Object.values(attendanceData || {})
+    .map((p) => parseFloat(p))
+    .filter((p) => !isNaN(p));
   const averageAttendance =
     attendanceValues.length > 0
       ? Math.round(
@@ -271,20 +264,22 @@ export default function StudentDashboard({ user }) {
 
   // Debug logging
   console.log("User:", user);
-  console.log("Student Record:", studentRecord);
-  console.log("Enrolled Course IDs:", enrolledCourseIds);
+  console.log("All Students:", allStudents);
+  console.log("Current Student ID:", studentId);
+  console.log("Student Detail with Enrollments:", studentDetail);
   console.log("Enrolled Courses:", enrolledCourses);
-  console.log("Attendance Percentages:", attendancePercentages);
+  console.log("Attendance Data:", attendanceData);
 
-  const isLoading = studentLoading || coursesLoading || attendanceLoading;
+  const isLoading =
+    studentsLoading || studentDetailLoading || attendanceLoading;
 
-  // Sample recent activities (replace with actual API call)
+  // Sample recent activities (replace with actual API call to attendance history)
   const recentActivities = [
     {
       icon: CheckCircle2,
       title: "Marked present",
-      sub: enrolledCourses[0]
-        ? `${enrolledCourses[0].code} — ${enrolledCourses[0].name}`
+      sub: enrolledCourses[0]?.course
+        ? `${enrolledCourses[0].course.code} — ${enrolledCourses[0].course.name}`
         : "CS301 — Data Structures",
       time: "2h ago",
       color: "green",
@@ -292,8 +287,8 @@ export default function StudentDashboard({ user }) {
     {
       icon: CheckCircle2,
       title: "Marked present",
-      sub: enrolledCourses[1]
-        ? `${enrolledCourses[1].code} — ${enrolledCourses[1].name}`
+      sub: enrolledCourses[1]?.course
+        ? `${enrolledCourses[1].course.code} — ${enrolledCourses[1].course.name}`
         : "CS302 — Algorithms",
       time: "Yesterday",
       color: "green",
@@ -308,7 +303,9 @@ export default function StudentDashboard({ user }) {
     {
       icon: BookOpen,
       title: "Enrolled in course",
-      sub: "CS303 — Databases",
+      sub: enrolledCourses[0]?.course
+        ? `${enrolledCourses[0].course.code} — ${enrolledCourses[0].course.name}`
+        : "New course",
       time: "Last week",
       color: "blue",
     },
@@ -342,8 +339,8 @@ export default function StudentDashboard({ user }) {
               {user?.name?.split(" ")[0] || "Student"}
             </h2>
             <p className="text-blue-100 text-base max-w-md">
-              {studentRecord?.department
-                ? `${studentRecord.department} • Level ${studentRecord.level}`
+              {studentDetail?.department
+                ? `${studentDetail.department} • Level ${studentDetail.level}`
                 : "Keep up the great attendance!"}
             </p>
 
@@ -444,11 +441,12 @@ export default function StudentDashboard({ user }) {
             </Card>
           ) : (
             <div className="space-y-4">
-              {enrolledCourses.slice(0, 3).map((course, i) => (
+              {enrolledCourses.slice(0, 3).map(({ course, enrollment }, i) => (
                 <CourseCard
                   key={course.id}
                   course={course}
-                  percentage={attendancePercentages?.[course.id] || 0}
+                  enrollment={enrollment}
+                  percentage={attendanceData?.[course.id] || "0%"}
                   delay={i}
                 />
               ))}
@@ -477,12 +475,10 @@ export default function StudentDashboard({ user }) {
           <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
             <CardContent className="p-4">
               <div className="space-y-1">
-                {recentActivities.map((activity, idx) => (
+                {recentActivities.slice(0, 3).map((activity, idx) => (
                   <div key={idx}>
                     <ActivityItem {...activity} />
-                    {idx < recentActivities.length - 1 && (
-                      <Separator className="my-2" />
-                    )}
+                    {idx < 2 && <Separator className="my-2" />}
                   </div>
                 ))}
               </div>
