@@ -84,7 +84,8 @@ const roleConfig = {
   },
 };
 
-function StatsCard({ title, value, icon: Icon, color, delay }) {
+// FIXED: StatsCard now accepts gradient string directly
+function StatsCard({ title, value, icon: Icon, gradient, delay }) {
   return (
     <motion.div
       variants={fadeUp}
@@ -100,7 +101,7 @@ function StatsCard({ title, value, icon: Icon, color, delay }) {
               <p className="text-3xl font-bold text-gray-900">{value}</p>
             </div>
             <div
-              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
+              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
             >
               <Icon className="w-6 h-6 text-white" />
             </div>
@@ -400,7 +401,7 @@ function EnrollModal({ student, isOpen, onClose, onSuccess }) {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [enrolling, setEnrolling] = useState(false);
 
-  const { data: coursesData, refetch: refetchCourses } = useQuery({
+  const { data: coursesData } = useQuery({
     queryKey: ["all-courses"],
     queryFn: async () => {
       const res = await api.get("/api/v1/courses");
@@ -585,28 +586,28 @@ export default function UsersPage() {
               title="Total Users"
               value={stats.total}
               icon={Users}
-              color="from-gray-500 to-gray-600"
+              gradient="from-gray-500 to-gray-600"
               delay={0}
             />
             <StatsCard
               title="Students"
               value={stats.students}
               icon={GraduationCap}
-              color="from-blue-500 to-blue-600"
+              gradient="from-blue-500 to-blue-600"
               delay={1}
             />
             <StatsCard
               title="Lecturers"
               value={stats.lecturers}
               icon={UserCheck}
-              color="from-emerald-500 to-emerald-600"
+              gradient="from-emerald-500 to-emerald-600"
               delay={2}
             />
             <StatsCard
               title="Admins"
               value={stats.admins}
               icon={Shield}
-              color="from-violet-500 to-violet-600"
+              gradient="from-violet-500 to-violet-600"
               delay={3}
             />
           </div>
