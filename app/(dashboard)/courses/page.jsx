@@ -28,7 +28,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -39,8 +38,8 @@ const fadeUp = {
   }),
 };
 
-// Modern Course Card Component
-function CourseCard({ course, role, index, viewMode }) {
+// Mobile-optimized Course Card Component
+function CourseCard({ course, role, index }) {
   const router = useRouter();
   const enrolledCount = course.enrollments?.length || 0;
   const sessionCount = course.sessions?.length || 0;
@@ -70,79 +69,24 @@ function CourseCard({ course, role, index, viewMode }) {
     teal: "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-800",
   };
 
-  if (viewMode === "list") {
-    return (
-      <motion.div
-        variants={fadeUp}
-        custom={index}
-        initial="hidden"
-        animate="visible"
-        whileHover={{ x: 4 }}
-        onClick={() => router.push(`/courses/${course.id}`)}
-        className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer p-4"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                className={`text-xs font-bold px-2.5 py-1 rounded-full border ${badgeMap[color]}`}
-              >
-                {course.code}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {course.semester}
-              </span>
-            </div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-base">
-              {course.name}
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-              {course.department}
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" />
-                {enrolledCount}
-              </span>
-              <span className="flex items-center gap-1">
-                <PlayCircle className="w-3.5 h-3.5" />
-                {sessionCount}
-              </span>
-              {role !== "STUDENT" && (
-                <span className="flex items-center gap-1">
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  {lecturerName.split(" ")[0]}
-                </span>
-              )}
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-600 flex-shrink-0" />
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
   return (
     <motion.div
       variants={fadeUp}
       custom={index}
       initial="hidden"
       animate="visible"
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -2 }}
       onClick={() => router.push(`/courses/${course.id}`)}
-      className="h-full cursor-pointer"
+      className="cursor-pointer"
     >
-      <Card className="h-full border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white dark:bg-gray-900">
+      <Card className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden bg-white dark:bg-gray-900">
         <div className={`h-1.5 bg-gradient-to-r ${colorMap[color]}`} />
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between mb-3">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <Badge
-                  variant="secondary"
-                  className="text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                  className={`text-xs font-bold border-0 ${badgeMap[color]}`}
                 >
                   {course.code}
                 </Badge>
@@ -153,20 +97,18 @@ function CourseCard({ course, role, index, viewMode }) {
                   {course.semester}
                 </Badge>
               </div>
-              <h3 className="font-bold text-gray-900 dark:text-white text-lg leading-tight mb-1 line-clamp-1">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight mb-1">
                 {course.name}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 text-xs">
                 {course.department}
               </p>
             </div>
-            <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
-              <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1" />
           </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
                   <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -196,13 +138,15 @@ function CourseCard({ course, role, index, viewMode }) {
             </div>
 
             {role !== "STUDENT" && (
-              <div className="mt-3 flex items-center gap-2 pt-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400">
                     {lecturerName.charAt(0)}
                   </span>
                 </div>
-                <span className="truncate">Lecturer: {lecturerName}</span>
+                <span className="truncate flex-1">
+                  Lecturer: {lecturerName}
+                </span>
               </div>
             )}
           </div>
@@ -220,20 +164,21 @@ function StatsCard({ title, value, icon: Icon, gradient, delay }) {
       custom={delay}
       initial="hidden"
       animate="visible"
+      className="col-span-1"
     >
-      <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 group bg-white dark:bg-gray-900">
-        <CardContent className="p-5">
+      <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                 {title}
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
                 {value}
               </p>
             </div>
             <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center group-hover:scale-110 transition-transform`}
+              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm`}
             >
               <Icon className="w-5 h-5 text-white" />
             </div>
@@ -248,7 +193,6 @@ export default function CoursesPage() {
   const { user, isStudent, isLecturer, isAdmin } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState("grid");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -279,7 +223,7 @@ export default function CoursesPage() {
   // Get unique departments for filter
   const departments = [
     "all",
-    ...new Set(visibleCourses.map((c) => c.department)),
+    ...new Set(visibleCourses.map((c) => c.department).filter(Boolean)),
   ];
 
   const filtered = visibleCourses.filter((c) => {
@@ -332,53 +276,54 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-6 pt-8 pb-6 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+        <div className="px-4 py-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              <h1 className="text-xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                 Courses
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                Manage and explore all available courses
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+                {totalCourses} courses available
               </p>
             </div>
             {(isAdmin || isLecturer) && (
               <Button
                 onClick={() => setShowCreateModal(true)}
+                size="sm"
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-md shadow-blue-200 dark:shadow-blue-900/30"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                New Course
+                <Plus className="w-4 h-4 mr-1" />
+                New
               </Button>
             )}
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          {/* Stats Cards - Horizontal scroll on mobile */}
+          <div className="grid grid-cols-4 gap-2 mb-3">
             <StatsCard
-              title="Total Courses"
+              title="Total"
               value={totalCourses}
               icon={BookOpen}
               gradient="from-blue-500 to-blue-600"
               delay={0}
             />
             <StatsCard
-              title="Enrolled Students"
+              title="Students"
               value={totalStudents}
               icon={Users}
               gradient="from-emerald-500 to-emerald-600"
               delay={1}
             />
             <StatsCard
-              title="Total Sessions"
+              title="Sessions"
               value={totalSessions}
               icon={PlayCircle}
               gradient="from-purple-500 to-purple-600"
               delay={2}
             />
             <StatsCard
-              title="Active Courses"
+              title="Active"
               value={activeCourses}
               icon={TrendingUp}
               gradient="from-orange-500 to-orange-600"
@@ -386,15 +331,15 @@ export default function CoursesPage() {
             />
           </div>
 
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
+          {/* Search and Filter */}
+          <div className="space-y-2">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search courses by name, code, or department..."
-                className="pl-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl"
+                placeholder="Search courses..."
+                className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl text-sm h-10"
               />
             </div>
 
@@ -402,7 +347,7 @@ export default function CoursesPage() {
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
+                className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
               >
                 {departments.map((dept) => (
                   <option key={dept} value={dept}>
@@ -410,83 +355,52 @@ export default function CoursesPage() {
                   </option>
                 ))}
               </select>
-
-              {/* View Toggle */}
-              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-all ${
-                    viewMode === "grid"
-                      ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-all ${
-                    viewMode === "list"
-                      ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* Content - Mobile optimized */}
+      <div className="px-4 py-4">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
               <Card
                 key={i}
                 className="animate-pulse bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
               >
-                <CardContent className="p-5">
-                  <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+                <CardContent className="p-4">
+                  <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="text-center py-16 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+          <Card className="text-center py-12 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
             <CardContent>
-              <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">
+              <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 font-semibold">
                 {search || departmentFilter !== "all"
                   ? "No courses found"
                   : "No courses yet"}
               </p>
-              <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+              <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
                 {search || departmentFilter !== "all"
-                  ? "Try adjusting your search or filter"
+                  ? "Try adjusting your search"
                   : isAdmin || isLecturer
-                    ? "Create your first course to get started"
-                    : "Ask your admin to enroll you in courses"}
+                    ? "Create your first course"
+                    : "Ask your admin to enroll you"}
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-                : "space-y-3"
-            }
-          >
+          <div className="space-y-3">
             {filtered.map((course, i) => (
               <CourseCard
                 key={course.id}
                 course={course}
                 role={user?.role}
                 index={i}
-                viewMode={viewMode}
               />
             ))}
           </div>
@@ -500,24 +414,24 @@ export default function CoursesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={(e) =>
               e.target === e.currentTarget && setShowCreateModal(false)
             }
           >
             <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-gray-900 rounded-2xl p-5 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                     Create Course
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Add a new course to the system
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Add a new course
                   </p>
                 </div>
                 <button
@@ -528,9 +442,9 @@ export default function CoursesPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form onSubmit={handleCreate} className="space-y-3">
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
+                  <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
                     Course Code
                   </Label>
                   <Input
@@ -538,12 +452,12 @@ export default function CoursesPage() {
                     onChange={(e) => setForm({ ...form, code: e.target.value })}
                     placeholder="e.g., CS301"
                     required
-                    className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    className="mt-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm h-10"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
+                  <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
                     Course Name
                   </Label>
                   <Input
@@ -551,12 +465,12 @@ export default function CoursesPage() {
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="e.g., Data Structures"
                     required
-                    className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    className="mt-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm h-10"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
+                  <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
                     Department
                   </Label>
                   <Input
@@ -566,12 +480,12 @@ export default function CoursesPage() {
                     }
                     placeholder="e.g., Computer Science"
                     required
-                    className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    className="mt-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm h-10"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
+                  <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
                     Semester
                   </Label>
                   <Input
@@ -581,13 +495,13 @@ export default function CoursesPage() {
                     }
                     placeholder="e.g., 2025/2026 Semester 1"
                     required
-                    className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    className="mt-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm h-10"
                   />
                 </div>
 
                 {isAdmin && (
                   <div>
-                    <Label className="text-gray-700 dark:text-gray-300 font-semibold">
+                    <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
                       Lecturer ID
                     </Label>
                     <Input
@@ -598,7 +512,7 @@ export default function CoursesPage() {
                       }
                       placeholder="Enter lecturer ID"
                       required={isAdmin}
-                      className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                      className="mt-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm h-10"
                     />
                   </div>
                 )}
@@ -606,10 +520,10 @@ export default function CoursesPage() {
                 <Button
                   type="submit"
                   disabled={creating}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl mt-4"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl h-11 mt-2"
                 >
                   {creating ? (
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Creating...
                     </span>
