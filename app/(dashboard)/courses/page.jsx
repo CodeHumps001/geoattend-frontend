@@ -16,8 +16,19 @@ import {
   Filter,
   GraduationCap,
   X,
+  LayoutGrid,
+  List,
+  Clock,
+  Award,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -28,31 +39,81 @@ const fadeUp = {
   }),
 };
 
-function CourseCard({ course, role, index }) {
+// Modern Course Card Component
+function CourseCard({ course, role, index, viewMode }) {
   const router = useRouter();
   const enrolledCount = course.enrollments?.length || 0;
   const sessionCount = course.sessions?.length || 0;
+  const lecturerName = course.lecturer?.user?.name || "Not assigned";
 
-  const colors = ["blue", "emerald", "violet", "orange", "pink", "teal"];
+  const colors = ["blue", "emerald", "violet", "amber", "rose", "teal"];
   const color = colors[index % colors.length];
 
   const colorMap = {
-    blue: "bg-blue-50 text-blue-700 border-blue-100",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    violet: "bg-violet-50 text-violet-700 border-violet-100",
-    orange: "bg-orange-50 text-orange-700 border-orange-100",
-    pink: "bg-pink-50 text-pink-700 border-pink-100",
-    teal: "bg-teal-50 text-teal-700 border-teal-100",
+    blue: "from-blue-500 to-blue-600",
+    emerald: "from-emerald-500 to-emerald-600",
+    violet: "from-violet-500 to-violet-600",
+    amber: "from-amber-500 to-amber-600",
+    rose: "from-rose-500 to-rose-600",
+    teal: "from-teal-500 to-teal-600",
   };
 
-  const dotMap = {
-    blue: "bg-blue-500",
-    emerald: "bg-emerald-500",
-    violet: "bg-violet-500",
-    orange: "bg-orange-500",
-    pink: "bg-pink-500",
-    teal: "bg-teal-500",
+  const badgeMap = {
+    blue: "bg-blue-50 text-blue-700 border-blue-200",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    violet: "bg-violet-50 text-violet-700 border-violet-200",
+    amber: "bg-amber-50 text-amber-700 border-amber-200",
+    rose: "bg-rose-50 text-rose-700 border-rose-200",
+    teal: "bg-teal-50 text-teal-700 border-teal-200",
   };
+
+  if (viewMode === "list") {
+    return (
+      <motion.div
+        variants={fadeUp}
+        custom={index}
+        initial="hidden"
+        animate="visible"
+        whileHover={{ x: 4 }}
+        onClick={() => router.push(`/courses/${course.id}`)}
+        className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer p-4"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className={`text-xs font-bold px-2.5 py-1 rounded-full border ${badgeMap[color]}`}
+              >
+                {course.code}
+              </span>
+              <span className="text-xs text-gray-400">{course.semester}</span>
+            </div>
+            <h3 className="font-bold text-gray-900 text-base">{course.name}</h3>
+            <p className="text-gray-500 text-xs mt-1">{course.department}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                {enrolledCount}
+              </span>
+              <span className="flex items-center gap-1">
+                <PlayCircle className="w-3.5 h-3.5" />
+                {sessionCount}
+              </span>
+              {role !== "STUDENT" && (
+                <span className="flex items-center gap-1">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  {lecturerName.split(" ")[0]}
+                </span>
+              )}
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -60,60 +121,107 @@ function CourseCard({ course, role, index }) {
       custom={index}
       initial="hidden"
       animate="visible"
-      whileHover={{ y: -2 }}
+      whileHover={{ y: -4 }}
       onClick={() => router.push(`/courses/${course.id}`)}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden"
+      className="h-full cursor-pointer"
     >
-      {/* Color accent bar */}
-      <div className={`h-1 w-full ${dotMap[color]}`} />
-
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                className={`text-xs font-bold px-2.5 py-1 rounded-full border ${colorMap[color]}`}
-              >
-                {course.code}
-              </span>
-            </div>
-            <h3 className="font-bold text-gray-900 text-base leading-tight">
-              {course.name}
-            </h3>
-            <p className="text-gray-400 text-xs mt-1">{course.department}</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-gray-300 flex-shrink-0 mt-1" />
-        </div>
-
-        <div className="flex items-center gap-1 text-xs text-gray-400 mb-4">
-          <span className="bg-gray-100 px-2 py-0.5 rounded-full">
-            {course.semester}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4 pt-3 border-t border-gray-50">
-          {role !== "STUDENT" && (
-            <div className="flex items-center gap-1.5 text-gray-500 text-xs">
-              <Users className="w-3.5 h-3.5" />
-              <span>{enrolledCount} students</span>
-            </div>
-          )}
-          <div className="flex items-center gap-1.5 text-gray-500 text-xs">
-            <PlayCircle className="w-3.5 h-3.5" />
-            <span>{sessionCount} sessions</span>
-          </div>
-          {role !== "STUDENT" && course.lecturer && (
-            <div className="flex items-center gap-1.5 text-gray-500 text-xs ml-auto">
-              <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                {course.lecturer?.user?.name?.[0] || "L"}
+      <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
+        <div className={`h-1.5 bg-gradient-to-r ${colorMap[color]}`} />
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <Badge variant="secondary" className="text-xs font-bold">
+                  {course.code}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {course.semester}
+                </Badge>
               </div>
-              <span className="truncate max-w-[80px]">
-                {course.lecturer?.user?.name}
-              </span>
+              <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1 line-clamp-1">
+                {course.name}
+              </h3>
+              <p className="text-gray-500 text-xs">{course.department}</p>
             </div>
-          )}
-        </div>
-      </div>
+            <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Students</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {enrolledCount}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <PlayCircle className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Sessions</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {sessionCount}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {role !== "STUDENT" && (
+              <div className="mt-3 flex items-center gap-2 pt-2 text-xs text-gray-500">
+                <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-gray-600">
+                    {lecturerName.charAt(0)}
+                  </span>
+                </div>
+                <span className="truncate">Lecturer: {lecturerName}</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// Stats Card Component
+function StatsCard({ title, value, icon: Icon, color, delay }) {
+  const colors = {
+    blue: "from-blue-500 to-blue-600",
+    emerald: "from-emerald-500 to-emerald-600",
+    purple: "from-purple-500 to-purple-600",
+    orange: "from-orange-500 to-orange-600",
+  };
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      custom={delay}
+      initial="hidden"
+      animate="visible"
+    >
+      <Card className="border border-gray-100 hover:shadow-lg transition-all duration-300 group">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">{title}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+            </div>
+            <div
+              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center group-hover:scale-110 transition-transform`}
+            >
+              <Icon className="w-5 h-5 text-white" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }
@@ -122,6 +230,8 @@ export default function CoursesPage() {
   const { user, isStudent, isLecturer, isAdmin } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = (useState < "grid") | ("list" > "grid");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
@@ -148,12 +258,33 @@ export default function CoursesPage() {
     return true;
   });
 
-  const filtered = visibleCourses.filter(
-    (c) =>
+  // Get unique departments for filter
+  const departments = [
+    "all",
+    ...new Set(visibleCourses.map((c) => c.department)),
+  ];
+
+  const filtered = visibleCourses.filter((c) => {
+    const matchesSearch =
       c.name?.toLowerCase().includes(search.toLowerCase()) ||
       c.code?.toLowerCase().includes(search.toLowerCase()) ||
-      c.department?.toLowerCase().includes(search.toLowerCase()),
+      c.department?.toLowerCase().includes(search.toLowerCase());
+    const matchesDepartment =
+      departmentFilter === "all" || c.department === departmentFilter;
+    return matchesSearch && matchesDepartment;
+  });
+
+  // Stats
+  const totalCourses = filtered.length;
+  const totalStudents = filtered.reduce(
+    (acc, c) => acc + (c.enrollments?.length || 0),
+    0,
   );
+  const totalSessions = filtered.reduce(
+    (acc, c) => acc + (c.sessions?.length || 0),
+    0,
+  );
+  const activeCourses = filtered.filter((c) => c.sessions?.length > 0).length;
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -181,82 +312,160 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-5 pt-12 pb-4 sticky top-0 z-40">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">Courses</h1>
-            <p className="text-gray-400 text-sm">
-              {filtered.length} course{filtered.length !== 1 ? "s" : ""}
-              {isLecturer
-                ? " you teach"
-                : isStudent
-                  ? " you're enrolled in"
-                  : " total"}
-            </p>
+      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 pt-8 pb-6 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Courses
+              </h1>
+              <p className="text-gray-500 text-sm mt-1">
+                Manage and explore all available courses
+              </p>
+            </div>
+            {(isAdmin || isLecturer) && (
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-200"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Course
+              </Button>
+            )}
           </div>
-          {(isAdmin || isLecturer) && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateModal(true)}
-              className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-200"
-            >
-              <Plus className="w-5 h-5 text-white" />
-            </motion.button>
-          )}
-        </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search courses..."
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
-          />
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <StatsCard
+              title="Total Courses"
+              value={totalCourses}
+              icon={BookOpen}
+              color="blue"
+              delay={0}
+            />
+            <StatsCard
+              title="Enrolled Students"
+              value={totalStudents}
+              icon={Users}
+              color="emerald"
+              delay={1}
+            />
+            <StatsCard
+              title="Total Sessions"
+              value={totalSessions}
+              icon={PlayCircle}
+              color="purple"
+              delay={2}
+            />
+            <StatsCard
+              title="Active Courses"
+              value={activeCourses}
+              icon={TrendingUp}
+              color="orange"
+              delay={3}
+            />
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search courses by name, code, or department..."
+                className="pl-10 bg-white border-gray-200 rounded-xl"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <select
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-400"
+              >
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept === "all" ? "All Departments" : dept}
+                  </option>
+                ))}
+              </select>
+
+              {/* View Toggle */}
+              <div className="flex bg-gray-100 rounded-xl p-1">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "grid"
+                      ? "bg-white shadow-sm text-gray-900"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "list"
+                      ? "bg-white shadow-sm text-gray-900"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-5 py-5 max-w-lg mx-auto">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse"
-              >
-                <div className="h-4 bg-gray-100 rounded w-20 mb-3" />
-                <div className="h-5 bg-gray-100 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-100 rounded w-1/2" />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-5">
+                  <div className="h-32 bg-gray-100 rounded-lg" />
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 font-semibold text-lg">
-              {search ? "No courses found" : "No courses yet"}
-            </p>
-            <p className="text-gray-400 text-sm mt-1">
-              {search
-                ? "Try a different search term"
-                : isAdmin || isLecturer
-                  ? "Create your first course"
-                  : "Ask your admin to enroll you"}
-            </p>
-          </div>
+          <Card className="text-center py-16">
+            <CardContent>
+              <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-semibold text-lg">
+                {search || departmentFilter !== "all"
+                  ? "No courses found"
+                  : "No courses yet"}
+              </p>
+              <p className="text-gray-400 text-sm mt-2">
+                {search || departmentFilter !== "all"
+                  ? "Try adjusting your search or filter"
+                  : isAdmin || isLecturer
+                    ? "Create your first course to get started"
+                    : "Ask your admin to enroll you in courses"}
+              </p>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="space-y-3">
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+                : "space-y-3"
+            }
+          >
             {filtered.map((course, i) => (
               <CourseCard
                 key={course.id}
                 course={course}
                 role={user?.role}
                 index={i}
+                viewMode={viewMode}
               />
             ))}
           </div>
@@ -279,86 +488,117 @@ export default function CoursesPage() {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-md"
+              className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-gray-900">
-                  Create Course
-                </h2>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Create Course
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Add a new course to the system
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                 >
                   <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
 
               <form onSubmit={handleCreate} className="space-y-4">
-                {[
-                  { key: "code", label: "Course Code", placeholder: "CS301" },
-                  {
-                    key: "name",
-                    label: "Course Name",
-                    placeholder: "Data Structures",
-                  },
-                  {
-                    key: "department",
-                    label: "Department",
-                    placeholder: "Computer Science",
-                  },
-                  {
-                    key: "semester",
-                    label: "Semester",
-                    placeholder: "2025/2026 Semester 1",
-                  },
-                  {
-                    key: "lecturerId",
-                    label: "Lecturer ID",
-                    placeholder: "1",
-                    type: "number",
-                  },
-                ].map(({ key, label, placeholder, type }) => (
-                  <div key={key}>
-                    <label className="block text-gray-700 text-sm font-semibold mb-1.5">
-                      {label}
-                    </label>
-                    <input
-                      value={form[key]}
+                <div>
+                  <Label className="text-gray-700 font-semibold">
+                    Course Code
+                  </Label>
+                  <Input
+                    value={form.code}
+                    onChange={(e) => setForm({ ...form, code: e.target.value })}
+                    placeholder="e.g., CS301"
+                    required
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-700 font-semibold">
+                    Course Name
+                  </Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="e.g., Data Structures"
+                    required
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-700 font-semibold">
+                    Department
+                  </Label>
+                  <Input
+                    value={form.department}
+                    onChange={(e) =>
+                      setForm({ ...form, department: e.target.value })
+                    }
+                    placeholder="e.g., Computer Science"
+                    required
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-700 font-semibold">
+                    Semester
+                  </Label>
+                  <Input
+                    value={form.semester}
+                    onChange={(e) =>
+                      setForm({ ...form, semester: e.target.value })
+                    }
+                    placeholder="e.g., 2025/2026 Semester 1"
+                    required
+                    className="mt-1.5"
+                  />
+                </div>
+
+                {isAdmin && (
+                  <div>
+                    <Label className="text-gray-700 font-semibold">
+                      Lecturer ID
+                    </Label>
+                    <Input
+                      type="number"
+                      value={form.lecturerId}
                       onChange={(e) =>
-                        setForm({ ...form, [key]: e.target.value })
+                        setForm({ ...form, lecturerId: e.target.value })
                       }
-                      type={type || "text"}
-                      placeholder={placeholder}
-                      required
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                      placeholder="Enter lecturer ID"
+                      required={isAdmin}
+                      className="mt-1.5"
                     />
                   </div>
-                ))}
+                )}
 
-                <motion.button
+                <Button
                   type="submit"
                   disabled={creating}
-                  className="w-full py-3.5 bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 mt-2"
-                  whileHover={!creating ? { scale: 1.02 } : {}}
-                  whileTap={!creating ? { scale: 0.98 } : {}}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 mt-4"
                 >
                   {creating ? (
-                    <motion.div
-                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 0.8,
-                        ease: "linear",
-                      }}
-                    />
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Creating...
+                    </span>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4 mr-2" />
                       Create Course
                     </>
                   )}
-                </motion.button>
+                </Button>
               </form>
             </motion.div>
           </motion.div>
