@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useAuthStore from "@/store/authStore";
+import Image from "next/image";
 
 // ── Animation variants ─────────────────────────────────────────
 const fadeUp = {
@@ -330,16 +331,20 @@ export default function LandingPage() {
             className="flex items-center gap-3"
             whileHover={{ scale: 1.02 }}
           >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/30">
-              <Zap className="w-5 h-5 text-white" />
+            <div className="w-11 h-11   flex items-center justify-center shadow-2xl  overflow-hidden">
+              <Image
+                src="/logo.jpg" // place your image in public/
+                alt="ClassRep Logo"
+                width={55}
+                height={55}
+                className="object-cover rounded"
+              />
             </div>
             <div>
               <h1 className="text-gray-900 dark:text-white font-black text-xl leading-none">
-                GeoAttend
+                KlassRep
               </h1>
-              <p className="text-gray-600 dark:text-slate-400 text-xs">
-                Smart Attendance Intelligence
-              </p>
+              {/*  */}
             </div>
           </motion.div>
 
@@ -393,7 +398,7 @@ export default function LandingPage() {
 
         <motion.div
           style={{ y: heroY }}
-          className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center w-full"
+          className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-start w-full"
         >
           {/* Left */}
           <div>
@@ -431,7 +436,7 @@ export default function LandingPage() {
                 variants={fadeUp}
                 className="text-gray-600 dark:text-slate-400 text-xl leading-relaxed max-w-xl mb-10"
               >
-                GeoAttend transforms how institutions manage attendance with GPS
+                KlassRep transforms how institutions manage attendance with GPS
                 verification, fraud prevention, live analytics, and role-based
                 access — all in one platform.
               </motion.p>
@@ -705,7 +710,7 @@ export default function LandingPage() {
 
       {/* ── How it works ── */}
       <section id="how-it-works" className="py-32 px-6">
-        <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+        <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-20 items-start">
           <div>
             {(() => {
               const [ref, inView] = useScrollReveal();
@@ -726,7 +731,7 @@ export default function LandingPage() {
                     Three steps to modern attendance
                   </h2>
                   <p className="text-slate-400 text-lg leading-relaxed">
-                    No hardware. No paper. No manual entry. Just open GeoAttend
+                    No hardware. No paper. No manual entry. Just open KlassRep
                     and the GPS does the rest.
                   </p>
                 </motion.div>
@@ -737,13 +742,13 @@ export default function LandingPage() {
             <StepCard
               number={1}
               title="Lecturer starts a session"
-              desc="The lecturer opens GeoAttend and taps Start Class. Their phone GPS automatically sets the classroom location — no manual coordinates needed."
+              desc="The lecturer opens KlassRep and taps Start Class. Their phone GPS automatically sets the classroom location — no manual coordinates needed."
               delay={0}
             />
             <StepCard
               number={2}
               title="Students mark attendance"
-              desc="Students tap once to mark attendance. GeoAttend checks GPS in real time — within 100m means PRESENT, outside means ABSENT. No faking it."
+              desc="Students tap once to mark attendance. KlassRep checks GPS in real time — within 100m means PRESENT, outside means ABSENT. No faking it."
               delay={1}
             />
             <StepCard
@@ -947,7 +952,7 @@ export default function LandingPage() {
                   Loved by educators
                 </h2>
                 <p className="text-slate-400 text-xl max-w-2xl mx-auto">
-                  Real feedback from institutions using GeoAttend.
+                  Real feedback from institutions using KlassRep.
                 </p>
               </motion.div>
             );
@@ -959,7 +964,7 @@ export default function LandingPage() {
               name="Dr. Kwame Mensah"
               role="Lecturer"
               school="KsTU"
-              quote="GeoAttend eliminated the 10 minutes we used to waste doing manual register. I start my session, students mark in, and I see everything live."
+              quote="KlassRep eliminated the 10 minutes we used to waste doing manual register. I start my session, students mark in, and I see everything live."
               avatar="https://i.pravatar.cc/100?img=11"
             />
             <TestimonialCard
@@ -1003,7 +1008,7 @@ export default function LandingPage() {
                   Engineered to scale.
                 </h2>
                 <p className="text-slate-400 text-xl max-w-2xl mx-auto mb-10">
-                  GeoAttend is not just another attendance system. It is a
+                  KlassRep is not just another attendance system. It is a
                   complete intelligent infrastructure for schools, universities,
                   and modern institutions.
                 </p>
@@ -1044,11 +1049,17 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-white" />
+                <div className="w-11 h-11   flex items-center justify-center shadow-2xl  overflow-hidden">
+                  <Image
+                    src="/logo.jpg" // place your image in public/
+                    alt="ClassRep Logo"
+                    width={55}
+                    height={55}
+                    className="object-cover rounded"
+                  />
                 </div>
                 <span className="text-gray-900 dark:text-white font-black text-lg">
-                  GeoAttend
+                  KlassRep
                 </span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">
@@ -1111,7 +1122,7 @@ export default function LandingPage() {
           </div>
           <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-slate-500 text-sm">
-              © 2026 GeoAttend. All rights reserved.
+              © 2026 ClassRep. All rights reserved.
             </p>
             <p className="text-slate-500 text-sm">
               Built by{" "}

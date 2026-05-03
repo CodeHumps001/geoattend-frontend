@@ -9,17 +9,17 @@ const useAuthStore = create(
       isAuthenticated: false,
 
       setAuth: (user, token) => {
-        localStorage.setItem("geoattend_token", token);
+        localStorage.setItem("klassrep_token", token);
         set({ user, token, isAuthenticated: true });
       },
 
       logout: () => {
-        localStorage.removeItem("geoattend_token");
+        localStorage.removeItem("klassrep_token");
         set({ user: null, token: null, isAuthenticated: false });
       },
     }),
     {
-      name: "geoattend_user",
+      name: "klassrep_user",
     },
   ),
 );

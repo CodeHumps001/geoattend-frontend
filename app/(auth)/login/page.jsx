@@ -10,6 +10,7 @@ import { Eye, EyeOff, Zap, ArrowRight, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 import useAuthStore from "@/store/authStore";
+import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -73,12 +74,18 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/30">
-            <Zap className="w-5 h-5 text-white" />
+          <div className="w-11 h-11   flex items-center justify-center shadow-2xl  overflow-hidden">
+            <Image
+              src="/logo.jpg" // place your image in public/
+              alt="ClassRep Logo"
+              width={55}
+              height={55}
+              className="object-cover rounded"
+            />
           </div>
           <div>
             <h1 className="text-gray-900 dark:text-white font-black text-xl leading-none">
-              GeoAttend
+              KlassRep
             </h1>
             <p className="text-gray-600 dark:text-slate-400 text-xs">
               Smart Attendance Intelligence
@@ -137,7 +144,7 @@ export default function LoginPage() {
         {/* <div className="relative z-10">
           <div className="border border-white/10 bg-white/5 rounded-2xl p-5">
             <p className="text-slate-300 text-sm leading-relaxed italic mb-4">
-              "GeoAttend eliminated the 10 minutes we used to waste on manual
+              "ClassRep eliminated the 10 minutes we used to waste on manual
               register every lecture."
             </p>
             <div className="flex items-center gap-3">
@@ -165,11 +172,17 @@ export default function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
+            <div className="w-11 h-11   flex items-center justify-center shadow-2xl  overflow-hidden">
+              <Image
+                src="/logo.jpg" // place your image in public/
+                alt="ClassRep Logo"
+                width={55}
+                height={55}
+                className="object-cover rounded"
+              />
             </div>
             <span className="text-gray-900 dark:text-white font-black text-xl">
-              GeoAttend
+              KlassRep
             </span>
           </div>
 

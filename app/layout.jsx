@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "GeoAttend — Smart Attendance System",
+  title: "KlassRep — Smart Attendance System",
   description: "GPS-based attendance tracking for KsTU",
 };
 
