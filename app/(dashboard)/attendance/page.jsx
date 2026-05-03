@@ -175,13 +175,11 @@ export default function AttendancePage() {
   const [marking, setMarking] = useState(null);
   const [markedSessions, setMarkedSessions] = useState([]);
 
-  // ✅ FIX: Safely get student ID with validation
+  // Get student ID from user object
   const studentId = user?.student?.id;
-
-  // ✅ FIX: Only fetch if studentId is valid (exists and is a number)
   const isValidStudentId = studentId && !isNaN(Number(studentId));
 
-  // Get enrolled courses for this student - ONLY if studentId is valid
+  // Get enrolled courses for this student
   const { data: studentDetail, isLoading: studentLoading } = useQuery({
     queryKey: ["student-detail", studentId],
     queryFn: async () => {
@@ -189,14 +187,14 @@ export default function AttendancePage() {
       const res = await api.get(`/api/v1/students/${studentId}`);
       return res.data.data.student;
     },
-    enabled: isValidStudentId, // ✅ Only run when studentId is valid
+    enabled: isValidStudentId,
   });
 
   // Get enrolled course IDs
   const enrolledCourseIds =
     studentDetail?.enrollments?.map((e) => e.courseId) || [];
 
-  // Get all sessions - always fetch, but handle empty state
+  // ✅ ONLY call getAllSessions - NOT the session/:id endpoint
   const {
     data: sessionsData,
     isLoading: sessionsLoading,
@@ -243,10 +241,10 @@ export default function AttendancePage() {
 
       const { latitude, longitude } = position.coords;
 
-      // Mark attendance using your backend endpoint
+      // Mark attendance
       const res = await api.post("/api/v1/attendance/mark", {
-        studentId: Number(studentId), // ✅ Ensure it's a number
-        sessionId: Number(sessionId), // ✅ Ensure it's a number
+        studentId: Number(studentId),
+        sessionId: Number(sessionId),
         latitude,
         longitude,
       });
@@ -292,7 +290,6 @@ export default function AttendancePage() {
   const isLoading = studentLoading || sessionsLoading;
   const hasEnrolledCourses = enrolledCourseIds.length > 0;
 
-  // ✅ FIX: Better loading state handling
   if (!isValidStudentId && !isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -313,7 +310,6 @@ export default function AttendancePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-5 pt-12 pb-4 sticky top-0 z-40">
         <h1 className="text-2xl font-black text-gray-900">Mark Attendance</h1>
         <p className="text-gray-400 text-sm">
