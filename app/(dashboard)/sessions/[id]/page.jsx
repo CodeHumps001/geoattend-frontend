@@ -8,7 +8,6 @@ import api from "@/lib/axios";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  PlayCircle,
   MapPin,
   Clock,
   CheckCircle2,
@@ -17,11 +16,8 @@ import {
   Calendar,
   Loader2,
   TrendingUp,
-  Navigation,
   Download,
   Award,
-  Eye,
-  Smartphone,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +43,12 @@ const fadeUp = {
 };
 
 // Export to CSV function
-const exportToCSV = (records, session) => {
+const exportToCSV = (records, sessionName) => {
+  if (!records || records.length === 0) {
+    toast.error("No records to export");
+    return;
+  }
+
   const headers = [
     "Student Name",
     "Student Code",
@@ -62,8 +63,8 @@ const exportToCSV = (records, session) => {
     record.student?.user?.name || "N/A",
     record.student?.studentCode || "N/A",
     record.student?.user?.email || "N/A",
-    record.status,
-    new Date(record.markedAt).toLocaleString(),
+    record.status || "N/A",
+    record.markedAt ? new Date(record.markedAt).toLocaleString() : "N/A",
     record.latitude?.toFixed(6) || "N/A",
     record.longitude?.toFixed(6) || "N/A",
   ]);
@@ -73,7 +74,7 @@ const exportToCSV = (records, session) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `attendance_${session?.course?.code || "session"}_${new Date().toISOString().split("T")[0]}.csv`;
+  a.download = `attendance_${sessionName}_${new Date().toISOString().split("T")[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   toast.success("Attendance report exported successfully!");
@@ -81,8 +82,8 @@ const exportToCSV = (records, session) => {
 
 // Desktop Table Row Component
 function DesktopAttendanceRow({ record }) {
-  const isPresent = record.status === "PRESENT";
-  const student = record.student;
+  const isPresent = record?.status === "PRESENT";
+  const student = record?.student;
   const user = student?.user;
 
   return (
@@ -132,14 +133,18 @@ function DesktopAttendanceRow({ record }) {
         </Badge>
       </TableCell>
       <TableCell className="text-sm whitespace-nowrap">
-        {new Date(record.markedAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })}
+        {record?.markedAt
+          ? new Date(record.markedAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })
+          : "N/A"}
       </TableCell>
       <TableCell className="text-xs text-gray-500 font-mono">
-        {record.latitude?.toFixed(4)}, {record.longitude?.toFixed(4)}
+        {record?.latitude
+          ? `${record.latitude.toFixed(4)}, ${record.longitude?.toFixed(4)}`
+          : "N/A"}
       </TableCell>
     </TableRow>
   );
@@ -147,8 +152,8 @@ function DesktopAttendanceRow({ record }) {
 
 // Mobile Card Component for Attendance
 function MobileAttendanceCard({ record, index }) {
-  const isPresent = record.status === "PRESENT";
-  const student = record.student;
+  const isPresent = record?.status === "PRESENT";
+  const student = record?.student;
   const user = student?.user;
   const initials =
     user?.name
@@ -204,28 +209,30 @@ function MobileAttendanceCard({ record, index }) {
       <div className="space-y-2 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-gray-500 text-xs">Email</span>
-          <span className="text-gray-700 text-xs font-mono">
+          <span className="text-gray-700 text-xs font-mono truncate max-w-[180px]">
             {user?.email || "N/A"}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-gray-500 text-xs">Marked At</span>
           <span className="text-gray-700 text-xs">
-            {new Date(record.markedAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            })}
+            {record?.markedAt
+              ? new Date(record.markedAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })
+              : "N/A"}
           </span>
         </div>
-        {record.latitude && record.longitude && (
-          <div className="flex items-center justify-between">
-            <span className="text-gray-500 text-xs">Location</span>
-            <span className="text-gray-700 text-xs font-mono">
-              {record.latitude?.toFixed(4)}, {record.longitude?.toFixed(4)}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500 text-xs">Location</span>
+          <span className="text-gray-700 text-xs font-mono">
+            {record?.latitude
+              ? `${record.latitude.toFixed(4)}, ${record.longitude?.toFixed(4)}`
+              : "N/A"}
+          </span>
+        </div>
       </div>
     </motion.div>
   );
@@ -235,7 +242,6 @@ export default function SessionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [exporting, setExporting] = useState(false);
-  const [viewMode, setViewMode] = (useState < "mobile") | ("tablet" > "mobile");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["session-detail", id],
@@ -247,44 +253,79 @@ export default function SessionDetailPage() {
     refetchInterval: 15000,
   });
 
-  const records = data?.records || [];
-  const session = records[0]?.session || data?.session;
-  const presentCount = records.filter((r) => r.status === "PRESENT").length;
-  const absentCount = records.filter((r) => r.status === "ABSENT").length;
+  // Extract data safely
+  const records = Array.isArray(data?.records) ? data.records : [];
+  const sessionInfo =
+    data?.session || (records.length > 0 ? records[0]?.session : null);
+
+  // Calculate stats safely
+  const presentCount = records.filter((r) => r?.status === "PRESENT").length;
+  const absentCount = records.filter((r) => r?.status === "ABSENT").length;
   const attendanceRate =
     records.length > 0
       ? ((presentCount / records.length) * 100).toFixed(1)
       : "0";
 
-  const now = new Date();
-  const isActive = session ? now < new Date(session.endTime) : false;
+  const isActive = sessionInfo?.endTime
+    ? new Date() < new Date(sessionInfo.endTime)
+    : false;
 
   const handleExport = () => {
+    if (records.length === 0) {
+      toast.error("No attendance records to export");
+      return;
+    }
     setExporting(true);
-    exportToCSV(records, session);
+    exportToCSV(records, sessionInfo?.course?.code || "session");
     setExporting(false);
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">Loading session details...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-md mx-4">
           <CardContent className="p-8 text-center">
             <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">
               Failed to load session
             </h2>
-            <p className="text-gray-500">Please try again later</p>
-            <Button onClick={() => router.back()} className="mt-4">
-              Go Back
+            <p className="text-gray-500 text-sm mb-4">
+              The session may have been deleted or you don't have access.
+            </p>
+            <Button onClick={() => router.push("/sessions")}>
+              Back to Sessions
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!sessionInfo) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md mx-4">
+          <CardContent className="p-8 text-center">
+            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Session Not Found
+            </h2>
+            <p className="text-gray-500 text-sm mb-4">
+              The session you're looking for doesn't exist.
+            </p>
+            <Button onClick={() => router.push("/sessions")}>
+              Back to Sessions
             </Button>
           </CardContent>
         </Card>
@@ -298,7 +339,7 @@ export default function SessionDetailPage() {
       <div className="bg-white border-b border-gray-100 px-4 sm:px-6 pt-8 pb-6 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/sessions")}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -318,10 +359,11 @@ export default function SessionDetailPage() {
                 )}
               </div>
               <h1 className="text-2xl font-black text-gray-900">
-                {session?.course?.name || "Session Details"}
+                {sessionInfo?.course?.name || "Session Details"}
               </h1>
               <p className="text-gray-500 text-sm mt-1">
-                {session?.course?.code} • {session?.course?.department}
+                {sessionInfo?.course?.code} •{" "}
+                {sessionInfo?.course?.department || "No department"}
               </p>
             </div>
 
@@ -359,12 +401,15 @@ export default function SessionDetailPage() {
                   <div>
                     <p className="text-xs text-gray-400">Date</p>
                     <p className="text-sm font-bold text-gray-900">
-                      {session
-                        ? new Date(session.date).toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })
+                      {sessionInfo?.date
+                        ? new Date(sessionInfo.date).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )
                         : "—"}
                     </p>
                   </div>
@@ -377,14 +422,16 @@ export default function SessionDetailPage() {
                   <div>
                     <p className="text-xs text-gray-400">Time</p>
                     <p className="text-sm font-bold text-gray-900">
-                      {session
-                        ? `${new Date(session.startTime).toLocaleTimeString(
+                      {sessionInfo?.startTime && sessionInfo?.endTime
+                        ? `${new Date(sessionInfo.startTime).toLocaleTimeString(
                             [],
                             { hour: "2-digit", minute: "2-digit" },
-                          )} — ${new Date(session.endTime).toLocaleTimeString(
-                            [],
-                            { hour: "2-digit", minute: "2-digit" },
-                          )}`
+                          )} — ${new Date(
+                            sessionInfo.endTime,
+                          ).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}`
                         : "—"}
                     </p>
                   </div>
@@ -397,7 +444,7 @@ export default function SessionDetailPage() {
                   <div>
                     <p className="text-xs text-gray-400">GPS Radius</p>
                     <p className="text-sm font-bold text-gray-900">
-                      {session?.radiusMeters || "—"} meters
+                      {sessionInfo?.radiusMeters || "—"} meters
                     </p>
                   </div>
                 </div>
@@ -407,7 +454,7 @@ export default function SessionDetailPage() {
                     <Users className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Enrolled</p>
+                    <p className="text-xs text-gray-400">Recorded</p>
                     <p className="text-sm font-bold text-gray-900">
                       {records.length} students
                     </p>
@@ -422,7 +469,7 @@ export default function SessionDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
             {
-              label: "Total Students",
+              label: "Total Recorded",
               value: records.length,
               icon: Users,
               color: "blue",
@@ -486,7 +533,7 @@ export default function SessionDetailPage() {
           animate="visible"
         >
           <Card className="border border-gray-100 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <div>
                 <CardTitle className="text-lg font-bold text-gray-900">
                   Attendance Records
@@ -498,28 +545,6 @@ export default function SessionDetailPage() {
                   </p>
                 )}
               </div>
-              {records.length > 0 && (
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={viewMode === "mobile" ? "default" : "outline"}
-                    onClick={() => setViewMode("mobile")}
-                    className="rounded-full hidden sm:flex"
-                  >
-                    <Smartphone className="w-3 h-3 mr-1" />
-                    Mobile
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={viewMode === "tablet" ? "default" : "outline"}
-                    onClick={() => setViewMode("tablet")}
-                    className="rounded-full hidden sm:flex"
-                  >
-                    <Eye className="w-3 h-3 mr-1" />
-                    Table
-                  </Button>
-                </div>
-              )}
             </CardHeader>
 
             <CardContent>
@@ -538,7 +563,7 @@ export default function SessionDetailPage() {
               ) : (
                 <>
                   {/* Desktop Table View */}
-                  <div className="hidden sm:block overflow-x-auto">
+                  <div className="hidden md:block overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -562,7 +587,7 @@ export default function SessionDetailPage() {
                   </div>
 
                   {/* Mobile Card View */}
-                  <div className="sm:hidden space-y-3">
+                  <div className="md:hidden space-y-3">
                     {records.map((record, i) => (
                       <MobileAttendanceCard
                         key={record.id}
@@ -578,7 +603,7 @@ export default function SessionDetailPage() {
         </motion.div>
 
         {/* Achievement / Summary Card (if high attendance) */}
-        {attendanceRate && parseFloat(attendanceRate) >= 80 && (
+        {records.length > 0 && parseFloat(attendanceRate) >= 80 && (
           <motion.div
             variants={fadeUp}
             custom={6}
@@ -597,7 +622,8 @@ export default function SessionDetailPage() {
                       Great Attendance! 🎉
                     </p>
                     <p className="text-xs text-gray-600 mt-1">
-                      {attendanceRate}% attendance rate. Keep up the good work!
+                      {attendanceRate}% attendance rate for this session. Keep
+                      up the good work!
                     </p>
                   </div>
                 </div>
