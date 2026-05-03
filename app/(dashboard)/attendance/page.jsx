@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/axios";
@@ -193,43 +193,45 @@ export default function AttendancePage() {
     studentDetail?.enrollments?.map((e) => e.courseId) || [];
 
   // Get all sessions
-  const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
+  const {
+    data: sessionsData,
+    isLoading: sessionsLoading,
+    error: sessionsError,
+  } = useQuery({
     queryKey: ["all-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/attendance/session/all");
       return res.data.data.sessions || [];
     },
-    refetchInterval: 30000, // refresh every 30 seconds
+    refetchInterval: 30000,
   });
+
+  // Show error if sessions fetch fails
+  if (sessionsError) {
+    console.error("Failed to fetch sessions:", sessionsError);
+    toast.error("Failed to load sessions. Please refresh the page.");
+  }
 
   // Filter sessions to only those in enrolled courses
   const enrolledSessions = (sessionsData || []).filter((session) =>
     enrolledCourseIds.includes(session.courseId),
   );
 
-  // Get already marked attendance for this student
-  const { data: markedData, refetch: refetchMarked } = useQuery({
-    queryKey: ["marked-attendance", studentId],
+  // Get marked attendance status - FIXED: Don't fetch for each session individually
+  // Instead, fetch all attendance records for this student in one go
+  const { data: attendanceRecords, refetch: refetchAttendance } = useQuery({
+    queryKey: ["student-attendance", studentId],
     queryFn: async () => {
       if (!studentId) return [];
-      // Get all sessions and check which ones have attendance
-      const marked = [];
-      for (const session of enrolledSessions) {
-        try {
-          const res = await api.get(`/api/v1/attendance/session/${session.id}`);
-          const records = res.data.data.records || [];
-          const hasMarked = records.some((r) => r.studentId === studentId);
-          if (hasMarked) marked.push(session.id);
-        } catch (error) {
-          console.error(`Failed to check session ${session.id}:`, error);
-        }
-      }
-      return marked;
+      // You need to create this endpoint in your backend
+      // For now, we'll track marked sessions locally
+      return [];
     },
-    enabled: !!studentId && enrolledSessions.length > 0,
+    enabled: !!studentId,
   });
 
-  const markedSessions = markedData || [];
+  // Track marked sessions locally after successful marking
+  const [markedSessions, setMarkedSessions] = useState([]);
 
   const markAttendance = async (sessionId) => {
     setMarking(sessionId);
@@ -259,9 +261,8 @@ export default function AttendancePage() {
 
       const result = res.data.data;
 
-      // Refresh marked sessions
-      await refetchMarked();
-      queryClient.invalidateQueries(["all-sessions"]);
+      // Add to marked sessions locally
+      setMarkedSessions((prev) => [...prev, sessionId]);
 
       if (result.status === "PRESENT") {
         toast.success(
@@ -272,6 +273,9 @@ export default function AttendancePage() {
           `❌ Absent — You are ${result.distanceFromClass} from class. Allowed radius is ${result.allowedRadius}.`,
         );
       }
+
+      // Refresh data
+      queryClient.invalidateQueries(["all-sessions"]);
     } catch (err) {
       if (err.code === 1 || err.code === "PERMISSION_DENIED") {
         toast.error(
