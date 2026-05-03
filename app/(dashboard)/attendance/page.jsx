@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/axios";
@@ -38,8 +38,10 @@ const fadeUp = {
 
 function SessionCard({ session, onMark, marking, alreadyMarked }) {
   const now = new Date();
+  const start = new Date(session.startTime);
   const end = new Date(session.endTime);
-  const isActive = now < end;
+  const isActive = now >= start && now <= end;
+  const isFuture = now < start;
 
   return (
     <motion.div
@@ -52,21 +54,31 @@ function SessionCard({ session, onMark, marking, alreadyMarked }) {
         className={`border-2 transition-all ${
           isActive
             ? "border-blue-100 shadow-md shadow-blue-50"
-            : "border-gray-100 opacity-60"
+            : isFuture
+              ? "border-yellow-100 bg-yellow-50/30"
+              : "border-gray-100 opacity-60"
         }`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 {isActive ? (
                   <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0 text-xs font-bold">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse inline-block" />
-                    LIVE
+                    LIVE NOW
+                  </Badge>
+                ) : isFuture ? (
+                  <Badge
+                    variant="secondary"
+                    className="bg-yellow-100 text-yellow-700 text-xs"
+                  >
+                    <Clock className="w-3 h-3 mr-1" />
+                    UPCOMING
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs">
-                    Ended
+                    ENDED
                   </Badge>
                 )}
               </div>
@@ -81,7 +93,7 @@ function SessionCard({ session, onMark, marking, alreadyMarked }) {
         </CardHeader>
 
         <CardContent className="pt-0">
-          <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+          <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               <span>
@@ -132,6 +144,17 @@ function SessionCard({ session, onMark, marking, alreadyMarked }) {
                 </span>
               )}
             </Button>
+          ) : isFuture ? (
+            <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-3">
+              <Clock className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+              <p className="text-yellow-700 font-medium text-sm">
+                Session starts at{" "}
+                {new Date(session.startTime).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
           ) : (
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
               <XCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -148,25 +171,68 @@ function SessionCard({ session, onMark, marking, alreadyMarked }) {
 
 export default function AttendancePage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [marking, setMarking] = useState(null);
-  const [markedSessions, setMarkedSessions] = useState([]);
-  const [lastResult, setLastResult] = useState(null);
+
+  // Get student ID from user object
+  const studentId = user?.student?.id;
+
+  // Get enrolled courses for this student
+  const { data: studentDetail, isLoading: studentLoading } = useQuery({
+    queryKey: ["student-detail", studentId],
+    queryFn: async () => {
+      if (!studentId) return null;
+      const res = await api.get(`/api/v1/students/${studentId}`);
+      return res.data.data.student;
+    },
+    enabled: !!studentId,
+  });
+
+  // Get enrolled course IDs
+  const enrolledCourseIds =
+    studentDetail?.enrollments?.map((e) => e.courseId) || [];
 
   // Get all sessions
-  const { data: sessionsData, isLoading } = useQuery({
-    queryKey: ["sessions"],
+  const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
+    queryKey: ["all-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/attendance/session/all");
-      return res.data.data;
+      return res.data.data.sessions || [];
     },
     refetchInterval: 30000, // refresh every 30 seconds
   });
 
-  const sessions = sessionsData?.sessions || [];
+  // Filter sessions to only those in enrolled courses
+  const enrolledSessions = (sessionsData || []).filter((session) =>
+    enrolledCourseIds.includes(session.courseId),
+  );
+
+  // Get already marked attendance for this student
+  const { data: markedData, refetch: refetchMarked } = useQuery({
+    queryKey: ["marked-attendance", studentId],
+    queryFn: async () => {
+      if (!studentId) return [];
+      // Get all sessions and check which ones have attendance
+      const marked = [];
+      for (const session of enrolledSessions) {
+        try {
+          const res = await api.get(`/api/v1/attendance/session/${session.id}`);
+          const records = res.data.data.records || [];
+          const hasMarked = records.some((r) => r.studentId === studentId);
+          if (hasMarked) marked.push(session.id);
+        } catch (error) {
+          console.error(`Failed to check session ${session.id}:`, error);
+        }
+      }
+      return marked;
+    },
+    enabled: !!studentId && enrolledSessions.length > 0,
+  });
+
+  const markedSessions = markedData || [];
 
   const markAttendance = async (sessionId) => {
     setMarking(sessionId);
-    setLastResult(null);
 
     try {
       // Get GPS location from browser
@@ -183,15 +249,7 @@ export default function AttendancePage() {
 
       const { latitude, longitude } = position.coords;
 
-      // Get student id
-      const meRes = await api.get("/api/v1/auth/me");
-      const studentId = meRes.data.data.user?.student?.id;
-
-      if (!studentId) {
-        toast.error("Student profile not found. Contact your admin.");
-        return;
-      }
-
+      // Mark attendance using your backend endpoint
       const res = await api.post("/api/v1/attendance/mark", {
         studentId,
         sessionId,
@@ -200,25 +258,29 @@ export default function AttendancePage() {
       });
 
       const result = res.data.data;
-      setLastResult(result);
-      setMarkedSessions((prev) => [...prev, sessionId]);
 
-      if (result.attendance?.status === "PRESENT") {
+      // Refresh marked sessions
+      await refetchMarked();
+      queryClient.invalidateQueries(["all-sessions"]);
+
+      if (result.status === "PRESENT") {
         toast.success(
           `✅ Present! You are ${result.distanceFromClass} from class.`,
         );
       } else {
         toast.error(
-          `❌ Absent — You are ${result.distanceFromClass} from class.`,
+          `❌ Absent — You are ${result.distanceFromClass} from class. Allowed radius is ${result.allowedRadius}.`,
         );
       }
     } catch (err) {
-      if (err.code === 1) {
+      if (err.code === 1 || err.code === "PERMISSION_DENIED") {
         toast.error(
           "Location access denied. Please allow location access and try again.",
         );
-      } else if (err.code === 2) {
+      } else if (err.code === 2 || err.code === "POSITION_UNAVAILABLE") {
         toast.error("Location unavailable. Please try again.");
+      } else if (err.code === 3 || err.code === "TIMEOUT") {
+        toast.error("Location request timed out. Please try again.");
       } else {
         const message =
           err.response?.data?.message ||
@@ -231,13 +293,36 @@ export default function AttendancePage() {
     }
   };
 
+  const isLoading = studentLoading || sessionsLoading;
+  const hasEnrolledCourses = enrolledCourseIds.length > 0;
+
+  if (!studentId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md mx-4">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Student Profile Not Found
+            </h2>
+            <p className="text-gray-500">
+              Please contact your administrator to set up your student profile.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-5 pt-12 pb-4 sticky top-0 z-40">
         <h1 className="text-2xl font-black text-gray-900">Mark Attendance</h1>
         <p className="text-gray-400 text-sm">
-          Active sessions you can mark in to
+          {hasEnrolledCourses
+            ? "Active sessions for your enrolled courses"
+            : "You are not enrolled in any courses yet"}
         </p>
       </div>
 
@@ -262,82 +347,6 @@ export default function AttendancePage() {
           </div>
         </motion.div>
 
-        {/* Last Result */}
-        <AnimatePresence>
-          {lastResult && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className={`rounded-2xl p-5 border-2 ${
-                lastResult.attendance?.status === "PRESENT"
-                  ? "bg-emerald-50 border-emerald-200"
-                  : "bg-red-50 border-red-200"
-              }`}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                {lastResult.attendance?.status === "PRESENT" ? (
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-                ) : (
-                  <XCircle className="w-8 h-8 text-red-500" />
-                )}
-                <div>
-                  <p
-                    className={`font-black text-lg ${
-                      lastResult.attendance?.status === "PRESENT"
-                        ? "text-emerald-700"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {lastResult.attendance?.status === "PRESENT"
-                      ? "You're Present!"
-                      : "Marked Absent"}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      lastResult.attendance?.status === "PRESENT"
-                        ? "text-emerald-600"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {lastResult.message}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div
-                  className={`rounded-xl p-3 ${
-                    lastResult.attendance?.status === "PRESENT"
-                      ? "bg-emerald-100"
-                      : "bg-red-100"
-                  }`}
-                >
-                  <p className="text-xs font-medium text-gray-600">
-                    Distance from class
-                  </p>
-                  <p className="font-bold text-gray-900">
-                    {lastResult.distanceFromClass}
-                  </p>
-                </div>
-                <div
-                  className={`rounded-xl p-3 ${
-                    lastResult.attendance?.status === "PRESENT"
-                      ? "bg-emerald-100"
-                      : "bg-red-100"
-                  }`}
-                >
-                  <p className="text-xs font-medium text-gray-600">
-                    Allowed radius
-                  </p>
-                  <p className="font-bold text-gray-900">
-                    {lastResult.allowedRadius}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Sessions List */}
         {isLoading ? (
           <div className="space-y-3">
@@ -351,7 +360,7 @@ export default function AttendancePage() {
               </Card>
             ))}
           </div>
-        ) : sessions.length === 0 ? (
+        ) : !hasEnrolledCourses ? (
           <motion.div
             variants={fadeUp}
             custom={1}
@@ -363,16 +372,34 @@ export default function AttendancePage() {
               <BookOpen className="w-8 h-8 text-gray-300" />
             </div>
             <p className="text-gray-500 font-semibold text-lg">
+              No enrolled courses
+            </p>
+            <p className="text-gray-400 text-sm mt-1">
+              Ask your admin to enroll you in courses
+            </p>
+          </motion.div>
+        ) : enrolledSessions.length === 0 ? (
+          <motion.div
+            variants={fadeUp}
+            custom={1}
+            initial="hidden"
+            animate="visible"
+            className="text-center py-20"
+          >
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-gray-500 font-semibold text-lg">
               No active sessions
             </p>
             <p className="text-gray-400 text-sm mt-1">
-              When a lecturer starts a session for your course it will appear
+              When a lecturer starts a session for your courses, it will appear
               here
             </p>
           </motion.div>
         ) : (
           <div className="space-y-4">
-            {sessions.map((session, i) => (
+            {enrolledSessions.map((session, i) => (
               <SessionCard
                 key={session.id}
                 session={session}
