@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }) {
     // <ProtectedRoute>
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar: Visible ONLY on big screens (md and up) */}
-      <aside className="hidden md:flex w-72 flex-col bg-white border-r border-gray-200">
+      <aside className="hidden md:flex w-72 flex-col bg-white border-r border-gray-200 md:justify-center">
         <Sidebar />
       </aside>
 
