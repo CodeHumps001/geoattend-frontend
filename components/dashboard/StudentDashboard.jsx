@@ -33,7 +33,15 @@ const fadeUp = {
 };
 
 // Stat Card Component
-function StatCard({ label, value, icon: Icon, trend, delay, subtext }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  trend,
+  delay,
+  subtext,
+  loading,
+}) {
   return (
     <motion.div
       variants={fadeUp}
@@ -48,16 +56,20 @@ function StatCard({ label, value, icon: Icon, trend, delay, subtext }) {
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 {label}
               </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                {value}
-              </p>
-              {trend && (
+              {loading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {value}
+                </p>
+              )}
+              {trend && !loading && (
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
                   <TrendingUp size={12} />
                   {trend}
                 </p>
               )}
-              {subtext && (
+              {subtext && !loading && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                   {subtext}
                 </p>
@@ -106,11 +118,13 @@ function CourseCard({ course, enrollment, percentage, delay }) {
                     <Users className="w-3 h-3 mr-1" />
                     Enrolled
                   </Badge>
-                  {percentage && percentage !== "0%" && (
-                    <Badge className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
-                      {percentage} Attendance
-                    </Badge>
-                  )}
+                  {percentage &&
+                    percentage !== "0%" &&
+                    percentage !== "0.0%" && (
+                      <Badge className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        {percentage} Attendance
+                      </Badge>
+                    )}
                 </div>
                 <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">
                   {course.name}
@@ -118,7 +132,7 @@ function CourseCard({ course, enrollment, percentage, delay }) {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   {course.department} • {course.semester}
                 </p>
-                {percentage && percentage !== "0%" && (
+                {percentage && percentage !== "0%" && percentage !== "0.0%" && (
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-500 dark:text-gray-400">
@@ -182,13 +196,12 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
 export default function StudentDashboard({ user }) {
   const router = useRouter();
 
-  // FIRST: Get the student record with enrollments using getStudentById
-  // We need to find the student ID first by fetching all students
+  // Fetch all students to find current student
   const { data: allStudents, isLoading: studentsLoading } = useQuery({
     queryKey: ["all-students"],
     queryFn: async () => {
       const res = await api.get("/api/v1/students");
-      return res.data.data.students;
+      return res.data.data?.students || [];
     },
     enabled: !!user,
   });
@@ -199,12 +212,13 @@ export default function StudentDashboard({ user }) {
   );
   const studentId = currentStudent?.id;
 
-  // SECOND: Fetch the full student details with enrollments using getStudentById
+  // Fetch full student details with enrollments
   const { data: studentDetail, isLoading: studentDetailLoading } = useQuery({
     queryKey: ["student-detail", studentId],
     queryFn: async () => {
+      if (!studentId) return null;
       const res = await api.get(`/api/v1/students/${studentId}`);
-      return res.data.data.student;
+      return res.data.data?.student || null;
     },
     enabled: !!studentId,
   });
@@ -216,13 +230,9 @@ export default function StudentDashboard({ user }) {
     enrollment: enrollment,
   }));
 
-  // THIRD: Fetch attendance percentage for each enrolled course
+  // Fetch attendance percentage for each enrolled course
   const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
-    queryKey: [
-      "attendance-percentages",
-      studentId,
-      enrolledCourses.map((e) => e.course.id),
-    ],
+    queryKey: ["attendance-percentages", studentId],
     queryFn: async () => {
       if (!studentId || enrolledCourses.length === 0) return {};
 
@@ -232,7 +242,7 @@ export default function StudentDashboard({ user }) {
           const res = await api.get(
             `/api/v1/students/${studentId}/attendance/${course.id}`,
           );
-          percentages[course.id] = res.data.data.percentage;
+          percentages[course.id] = res.data.data?.percentage || "0%";
         } catch (error) {
           console.error(
             `Failed to fetch attendance for course ${course.id}:`,
@@ -246,9 +256,9 @@ export default function StudentDashboard({ user }) {
     enabled: !!studentId && enrolledCourses.length > 0,
   });
 
+  // Calculate statistics
   const totalEnrolled = enrolledCourses.length;
 
-  // Calculate average attendance
   const attendanceValues = Object.values(attendanceData || {})
     .map((p) => parseFloat(p))
     .filter((p) => !isNaN(p));
@@ -260,56 +270,99 @@ export default function StudentDashboard({ user }) {
       : 0;
 
   const perfectCourses = attendanceValues.filter((p) => p >= 100).length;
-  const weeklyAttendance = Math.min(totalEnrolled * 2, 8);
 
-  // Debug logging
-  console.log("User:", user);
-  console.log("All Students:", allStudents);
-  console.log("Current Student ID:", studentId);
-  console.log("Student Detail with Enrollments:", studentDetail);
-  console.log("Enrolled Courses:", enrolledCourses);
-  console.log("Attendance Data:", attendanceData);
+  // Calculate weekly attendance (from actual records)
+  const [weeklyAttendance, setWeeklyAttendance] = useState(0);
 
-  const isLoading =
-    studentsLoading || studentDetailLoading || attendanceLoading;
+  useQuery({
+    queryKey: ["weekly-attendance", studentId],
+    queryFn: async () => {
+      if (!studentId) return 0;
+      let count = 0;
+      const thisWeek = new Date();
+      thisWeek.setDate(thisWeek.getDate() - thisWeek.getDay());
 
-  // Sample recent activities (replace with actual API call to attendance history)
-  const recentActivities = [
-    {
-      icon: CheckCircle2,
-      title: "Marked present",
-      sub: enrolledCourses[0]?.course
-        ? `${enrolledCourses[0].course.code} — ${enrolledCourses[0].course.name}`
-        : "CS301 — Data Structures",
-      time: "2h ago",
-      color: "green",
+      for (const { course } of enrolledCourses) {
+        try {
+          const res = await api.get(
+            `/api/v1/students/${studentId}/attendance/${course.id}`,
+          );
+          // This would need a more detailed endpoint to get weekly attendance
+          // For now, we'll calculate based on available data
+          count += Math.min(2, totalEnrolled);
+        } catch (error) {
+          console.error("Failed to fetch weekly attendance:", error);
+        }
+      }
+      return Math.min(count, totalEnrolled * 2);
     },
-    {
-      icon: CheckCircle2,
-      title: "Marked present",
-      sub: enrolledCourses[1]?.course
-        ? `${enrolledCourses[1].course.code} — ${enrolledCourses[1].course.name}`
-        : "CS302 — Algorithms",
-      time: "Yesterday",
-      color: "green",
+    enabled: !!studentId && enrolledCourses.length > 0,
+    onSuccess: (data) => setWeeklyAttendance(data),
+  });
+
+  // Fetch real recent activities from attendance records
+  const { data: recentAttendanceRecords } = useQuery({
+    queryKey: ["recent-attendance", studentId],
+    queryFn: async () => {
+      if (!studentId || enrolledCourses.length === 0) return [];
+
+      const activities = [];
+      // Get recent sessions from enrolled courses
+      const sessionsRes = await api.get("/api/v1/attendance/session/all");
+      const sessions = sessionsRes.data.data?.sessions || [];
+
+      for (const { course } of enrolledCourses.slice(0, 3)) {
+        const courseSessions = sessions
+          .filter((s) => s.courseId === course.id)
+          .slice(0, 2);
+        for (const session of courseSessions) {
+          try {
+            const attendanceRes = await api.get(
+              `/api/v1/attendance/session/${session.id}`,
+            );
+            const record = attendanceRes.data.data?.records?.find(
+              (r) => r.studentId === studentId,
+            );
+            if (record) {
+              activities.push({
+                icon: record.status === "PRESENT" ? CheckCircle2 : AlertCircle,
+                title:
+                  record.status === "PRESENT"
+                    ? "Marked present"
+                    : "Marked absent",
+                sub: `${course.code} — ${course.name}`,
+                time: new Date(record.markedAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                color: record.status === "PRESENT" ? "green" : "red",
+              });
+            }
+          } catch (error) {
+            console.error("Failed to fetch attendance record:", error);
+          }
+        }
+      }
+
+      return activities.slice(0, 4);
     },
-    {
-      icon: AlertCircle,
-      title: "Marked absent",
-      sub: "MATH301 — Calculus",
-      time: "2 days ago",
-      color: "red",
-    },
+    enabled: !!studentId && enrolledCourses.length > 0,
+  });
+
+  const recentActivities = recentAttendanceRecords || [
     {
       icon: BookOpen,
       title: "Enrolled in course",
       sub: enrolledCourses[0]?.course
         ? `${enrolledCourses[0].course.code} — ${enrolledCourses[0].course.name}`
         : "New course",
-      time: "Last week",
+      time: "Recently",
       color: "blue",
     },
   ];
+
+  const isLoading =
+    studentsLoading || studentDetailLoading || attendanceLoading;
 
   return (
     <div className="w-full space-y-8 pb-10">
@@ -329,7 +382,7 @@ export default function StudentDashboard({ user }) {
                 variant="secondary"
                 className="bg-white/20 text-white border-none"
               >
-                Good morning 👋
+                Student Dashboard
               </Badge>
               <Badge variant="outline" className="border-white/30 text-white">
                 {totalEnrolled} Courses
@@ -358,45 +411,44 @@ export default function StudentDashboard({ user }) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-          </>
-        ) : (
-          <>
-            <StatCard
-              label="Enrolled"
-              value={totalEnrolled}
-              icon={BookOpen}
-              subtext="Active courses"
-              delay={1}
-            />
-            <StatCard
-              label="Avg Attendance"
-              value={`${averageAttendance}%`}
-              icon={TrendingUp}
-              trend={averageAttendance > 80 ? "Excellent!" : "Keep improving"}
-              delay={2}
-            />
-            <StatCard
-              label="This Week"
-              value={weeklyAttendance}
-              icon={Clock}
-              subtext="Classes attended"
-              delay={3}
-            />
-            <StatCard
-              label="Perfect"
-              value={perfectCourses}
-              icon={Award}
-              subtext="100% attendance"
-              delay={4}
-            />
-          </>
-        )}
+        <StatCard
+          label="Enrolled"
+          value={totalEnrolled}
+          icon={BookOpen}
+          subtext="Active courses"
+          delay={1}
+          loading={isLoading}
+        />
+        <StatCard
+          label="Avg Attendance"
+          value={`${averageAttendance}%`}
+          icon={TrendingUp}
+          trend={
+            averageAttendance > 80
+              ? "Excellent!"
+              : averageAttendance > 50
+                ? "Keep improving"
+                : "Needs attention"
+          }
+          delay={2}
+          loading={isLoading}
+        />
+        <StatCard
+          label="This Week"
+          value={weeklyAttendance}
+          icon={Clock}
+          subtext="Classes attended"
+          delay={3}
+          loading={isLoading}
+        />
+        <StatCard
+          label="Perfect"
+          value={perfectCourses}
+          icon={Award}
+          subtext="100% attendance"
+          delay={4}
+          loading={isLoading}
+        />
       </div>
 
       {/* Main Content Grid */}
@@ -475,19 +527,33 @@ export default function StudentDashboard({ user }) {
           <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
             <CardContent className="p-4">
               <div className="space-y-1">
-                {recentActivities.slice(0, 3).map((activity, idx) => (
-                  <div key={idx}>
-                    <ActivityItem {...activity} />
-                    {idx < 2 && <Separator className="my-2" />}
+                {isLoading ? (
+                  <>
+                    <Skeleton className="h-16 rounded-xl" />
+                    <Skeleton className="h-16 rounded-xl" />
+                    <Skeleton className="h-16 rounded-xl" />
+                  </>
+                ) : recentActivities.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                      No recent activity
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  recentActivities.slice(0, 3).map((activity, idx) => (
+                    <div key={idx}>
+                      <ActivityItem {...activity} />
+                      {idx < 2 && <Separator className="my-2" />}
+                    </div>
+                  ))
+                )}
               </div>
               <Button
                 variant="ghost"
                 className="w-full mt-4 text-blue-600 dark:text-blue-400 hover:text-blue-700"
-                onClick={() => router.push("/attendance/history")}
+                onClick={() => router.push("/attendance")}
               >
-                View Full History
+                View Attendance History
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>

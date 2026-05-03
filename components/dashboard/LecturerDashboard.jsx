@@ -37,7 +37,7 @@ const fadeUp = {
 };
 
 // Stat Card Component using shadcn
-function StatCard({ label, value, icon: Icon, trend, delay }) {
+function StatCard({ label, value, icon: Icon, trend, loading, delay }) {
   return (
     <motion.div
       variants={fadeUp}
@@ -52,10 +52,14 @@ function StatCard({ label, value, icon: Icon, trend, delay }) {
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 {label}
               </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                {value}
-              </p>
-              {trend && (
+              {loading ? (
+                <Skeleton className="h-8 w-20" />
+              ) : (
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {value}
+                </p>
+              )}
+              {trend && !loading && (
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
                   <TrendingUp size={12} />
                   {trend}
@@ -72,7 +76,7 @@ function StatCard({ label, value, icon: Icon, trend, delay }) {
   );
 }
 
-// Course Card Component using shadcn
+// Course Card Component
 function CourseCard({ course, delay }) {
   const router = useRouter();
   const studentCount = course.enrollments?.length || 0;
@@ -97,7 +101,7 @@ function CourseCard({ course, delay }) {
                     variant="outline"
                     className="text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
                   >
-                    {course.code || "CS301"}
+                    {course.code}
                   </Badge>
                   <Badge
                     variant="secondary"
@@ -108,20 +112,15 @@ function CourseCard({ course, delay }) {
                   </Badge>
                 </div>
                 <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">
-                  {course.title}
+                  {course.name}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {course.description?.substring(0, 100) ||
-                    "No description available"}
+                  {course.department} • {course.semester}
                 </p>
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-1 text-xs text-gray-400">
                     <Clock className="w-3 h-3" />
-                    {course.schedule || "Schedule TBD"}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <Calendar className="w-3 h-3" />
-                    {course.semester || "Current Semester"}
+                    Created: {new Date(course.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>
@@ -169,6 +168,7 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
 export default function LecturerDashboard({ user }) {
   const router = useRouter();
 
+  // Fetch all courses
   const { data: coursesData, isLoading: coursesLoading } = useQuery({
     queryKey: ["lecturer-courses"],
     queryFn: async () => {
@@ -178,67 +178,140 @@ export default function LecturerDashboard({ user }) {
     enabled: !!user,
   });
 
-  // Fetch sessions
-  const { data: sessionsData } = useQuery({
+  // Fetch all sessions
+  const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
     queryKey: ["lecturer-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/attendance/session/all");
       return res.data.data;
     },
     enabled: !!user,
-    refetchInterval: 15000, // Refetch every 15 seconds to show real-time updates
+    refetchInterval: 15000,
   });
 
-  const myCourses =
-    coursesData?.courses?.filter(
-      (c) => c.lecturer?.user?.email === user?.email,
-    ) || [];
+  // Filter courses for this lecturer
+  const myCourses = (coursesData?.courses || []).filter(
+    (c) => c.lecturer?.user?.email === user?.email,
+  );
 
   // Filter sessions for the current lecturer's courses
   const mySessions = (sessionsData?.sessions || []).filter((session) => {
     return myCourses.some((course) => course.id === session.courseId);
   });
 
+  // Calculate real stats
   const totalStudentsUnderMe = myCourses.reduce(
     (acc, c) => acc + (c.enrollments?.length || 0),
     0,
   );
 
-  // Build recent activities from actual sessions
-  const recentActivities = mySessions
-    .slice(0, 4)
-    .map((session, idx) => {
+  // Calculate sessions today
+  const sessionsToday = mySessions.filter((session) => {
+    const today = new Date();
+    const sessionDate = new Date(session.startTime);
+    return sessionDate.toDateString() === today.toDateString();
+  }).length;
+
+  // Calculate active sessions (currently live)
+  const activeSessions = mySessions.filter((session) => {
+    const now = new Date();
+    const start = new Date(session.startTime);
+    const end = new Date(session.endTime);
+    return now >= start && now <= end;
+  }).length;
+
+  // Calculate average attendance
+  const [avgAttendance, setAvgAttendance] = useState(0);
+
+  useQuery({
+    queryKey: ["lecturer-attendance-stats"],
+    queryFn: async () => {
+      let totalPresent = 0;
+      let totalRecords = 0;
+      const recentSessions = mySessions.slice(0, 5);
+
+      for (const session of recentSessions) {
+        try {
+          const res = await api.get(`/api/v1/attendance/session/${session.id}`);
+          const records = res.data.data?.records || [];
+          const present = records.filter((r) => r.status === "PRESENT").length;
+          totalPresent += present;
+          totalRecords += records.length;
+        } catch (err) {
+          console.error("Failed to fetch session attendance:", err);
+        }
+      }
+
+      const rate =
+        totalRecords > 0 ? ((totalPresent / totalRecords) * 100).toFixed(1) : 0;
+      setAvgAttendance(parseFloat(rate));
+      return rate;
+    },
+    enabled: mySessions.length > 0,
+  });
+
+  // Build recent activities from actual data
+  const getRecentActivities = () => {
+    const activities = [];
+
+    // Add session activities
+    const recentSessions = mySessions.slice(0, 3);
+    for (const session of recentSessions) {
       const now = new Date();
-      const isActive = now < new Date(session.endTime);
+      const isActive =
+        now >= new Date(session.startTime) && now <= new Date(session.endTime);
+      const isCompleted = now > new Date(session.endTime);
+      const attendanceCount = session.attendance?.length || 0;
       const presentCount = (session.attendance || []).filter(
         (a) => a.status === "PRESENT",
       ).length;
 
-      return {
-        icon: isActive ? PlayCircle : CheckCircle2,
-        title: isActive ? "Session in progress" : "Session completed",
-        sub: `${session.course?.name || "Course"} — ${presentCount || 0} present`,
+      let title = "";
+      let color = "blue";
+
+      if (isActive) {
+        title = "Session in progress";
+        color = "emerald";
+      } else if (isCompleted) {
+        title = "Session completed";
+        color = "blue";
+      } else {
+        title = "Upcoming session";
+        color = "amber";
+      }
+
+      activities.push({
+        icon: isActive ? PlayCircle : isCompleted ? CheckCircle2 : Calendar,
+        title: title,
+        sub: `${session.course?.name || "Course"} — ${presentCount}/${attendanceCount} present`,
         time: new Date(session.startTime).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        color: isActive ? "emerald" : "blue",
-      };
-    })
-    .concat([
-      {
+        color: color,
+      });
+    }
+
+    // Add enrollment activity if available
+    if (myCourses.length > 0) {
+      activities.push({
         icon: Users,
-        title: "New student enrolled",
-        sub: "Check the courses page",
-        time: "Recently",
+        title: "Student enrollment",
+        sub: `${totalStudentsUnderMe} total students across ${myCourses.length} courses`,
+        time: "Active",
         color: "amber",
-      },
-    ])
-    .slice(0, 4);
+      });
+    }
+
+    return activities.slice(0, 4);
+  };
+
+  const recentActivities = getRecentActivities();
+  const isLoading = coursesLoading || sessionsLoading;
 
   return (
     <div className="w-full space-y-8 pb-10">
-      {/* Hero Section with shadcn Card */}
+      {/* Hero Section */}
       <motion.div
         variants={fadeUp}
         custom={0}
@@ -278,12 +351,12 @@ export default function LecturerDashboard({ user }) {
                 Start New Session
               </Button>
               <Button
-                onClick={() => router.push("/courses/new")}
+                onClick={() => router.push("/courses")}
                 variant="outline"
                 className="bg-emerald-500/20 backdrop-blur-md text-white border-emerald-400/30 hover:bg-emerald-500/30"
               >
                 <PlusCircle className="w-4 h-4 mr-2" />
-                Create Course
+                Manage Courses
               </Button>
             </div>
           </CardContent>
@@ -292,51 +365,42 @@ export default function LecturerDashboard({ user }) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {coursesLoading ? (
-          <>
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-          </>
-        ) : (
-          <>
-            <StatCard
-              label="My Courses"
-              value={myCourses.length || "0"}
-              icon={BookOpen}
-              trend="Active"
-              delay={1}
-            />
-            <StatCard
-              label="Total Students"
-              value={totalStudentsUnderMe}
-              icon={Users}
-              trend="Across all courses"
-              delay={2}
-            />
-            <StatCard
-              label="Sessions Today"
-              value={
-                mySessions.filter((s) => {
-                  const today = new Date();
-                  const sessionDate = new Date(s.startTime);
-                  return sessionDate.toDateString() === today.toDateString();
-                }).length
-              }
-              icon={PlayCircle}
-              trend="Active & upcoming"
-              delay={3}
-            />
-            <StatCard
-              label="Avg Attendance"
-              value="91.2%"
-              icon={TrendingUp}
-              trend="+5.2% vs last month"
-              delay={4}
-            />
-          </>
-        )}
+        <StatCard
+          label="My Courses"
+          value={myCourses.length}
+          icon={BookOpen}
+          trend={myCourses.length > 0 ? "Active" : "No courses"}
+          loading={isLoading}
+          delay={1}
+        />
+        <StatCard
+          label="Total Students"
+          value={totalStudentsUnderMe}
+          icon={Users}
+          trend="Across all courses"
+          loading={isLoading}
+          delay={2}
+        />
+        <StatCard
+          label="Active Sessions"
+          value={activeSessions}
+          icon={PlayCircle}
+          trend={`${activeSessions} ongoing`}
+          loading={isLoading}
+          delay={3}
+        />
+        <StatCard
+          label="Avg Attendance"
+          value={`${avgAttendance}%`}
+          icon={TrendingUp}
+          trend={
+            avgAttendance > 0
+              ? `${avgAttendance > 75 ? "Good" : "Needs improvement"}`
+              : "No data"
+          }
+          loading={isLoading}
+          delay={4}
+        />
       </div>
 
       {/* Main Content Grid */}
@@ -361,7 +425,7 @@ export default function LecturerDashboard({ user }) {
             </Button>
           </div>
 
-          {coursesLoading ? (
+          {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-32 rounded-xl" />
               <Skeleton className="h-32 rounded-xl" />
@@ -375,16 +439,8 @@ export default function LecturerDashboard({ user }) {
                   No courses assigned
                 </p>
                 <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-                  Create a course to begin tracking attendance.
+                  Contact admin to get assigned to courses.
                 </p>
-                <Button
-                  onClick={() => router.push("/courses/new")}
-                  variant="outline"
-                  className="mt-4"
-                >
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Create Your First Course
-                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -417,21 +473,29 @@ export default function LecturerDashboard({ user }) {
           <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
             <CardContent className="p-4">
               <div className="space-y-1">
-                {recentActivities.map((activity, idx) => (
-                  <div key={idx}>
-                    <ActivityItem {...activity} />
-                    {idx < recentActivities.length - 1 && (
-                      <Separator className="my-2" />
-                    )}
-                  </div>
-                ))}
+                {isLoading ? (
+                  <>
+                    <Skeleton className="h-16 rounded-xl" />
+                    <Skeleton className="h-16 rounded-xl" />
+                    <Skeleton className="h-16 rounded-xl" />
+                  </>
+                ) : (
+                  recentActivities.map((activity, idx) => (
+                    <div key={idx}>
+                      <ActivityItem {...activity} />
+                      {idx < recentActivities.length - 1 && (
+                        <Separator className="my-2" />
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
               <Button
                 variant="ghost"
                 className="w-full mt-4 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
-                onClick={() => router.push("/reports")}
+                onClick={() => router.push("/sessions")}
               >
-                View Full Activity Log
+                View All Sessions
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>
