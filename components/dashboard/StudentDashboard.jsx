@@ -1,52 +1,45 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import api from "@/lib/axios";
-
 import {
   AlertCircle,
-  Award,
   BookOpen,
-  Calendar,
   CheckCircle2,
   ChevronRight,
-  Clock,
   GraduationCap,
   MapPin,
-  Sparkles,
   TrendingUp,
+  Clock,
+  Award,
+  Calendar,
   Users,
 } from "lucide-react";
-
-import { Card, CardContent } from "@/components/ui/card";
-
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.5,
-      delay: i * 0.08,
-      ease: [0.22, 1, 0.36, 1],
-    },
+    transition: { duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
-/* -------------------------------------------------------------------------- */
-/*                                  STAT CARD                                 */
-/* -------------------------------------------------------------------------- */
-
-function StatCard({ label, value, icon: Icon, trend, subtext, delay }) {
+// Stat Card Component using shadcn
+function StatCard({ label, value, icon: Icon, trend, delay, subtext }) {
   return (
     <motion.div
       variants={fadeUp}
@@ -54,32 +47,30 @@ function StatCard({ label, value, icon: Icon, trend, subtext, delay }) {
       initial="hidden"
       animate="visible"
     >
-      <Card className="group relative overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:shadow-blue-500/10">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none" />
-
-        <CardContent className="relative p-5">
+      <Card className="relative overflow-hidden border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all duration-300 group">
+        <CardContent className="p-6">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-slate-400 font-medium">{label}</p>
-
-              <h3 className="mt-2 text-3xl font-black tracking-tight text-white">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                {label}
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {value}
-              </h3>
-
+              </p>
               {trend && (
-                <div className="mt-3 inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400">
-                  <TrendingUp className="h-3 w-3" />
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
+                  <TrendingUp size={12} />
                   {trend}
-                </div>
+                </p>
               )}
-
               {subtext && (
-                <p className="mt-3 text-xs text-slate-500">{subtext}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  {subtext}
+                </p>
               )}
             </div>
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/10 transition-transform duration-300 group-hover:scale-110">
-              <Icon className="h-5 w-5 text-blue-400" />
+            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
         </CardContent>
@@ -88,10 +79,7 @@ function StatCard({ label, value, icon: Icon, trend, subtext, delay }) {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                 COURSE CARD                                */
-/* -------------------------------------------------------------------------- */
-
+// Course Card Component with Progress
 function CourseCard({ course, percentage, delay }) {
   const router = useRouter();
 
@@ -102,115 +90,104 @@ function CourseCard({ course, percentage, delay }) {
       initial="hidden"
       animate="visible"
     >
-      <Card className="group overflow-hidden border border-white/10 bg-[#0b1220]/90 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10">
-        <button
-          onClick={() => router.push(`/courses/${course.id}`)}
-          className="w-full text-left"
-        >
-          <CardContent className="p-6">
-            {/* Top */}
-            <div className="flex items-start justify-between gap-4">
+      <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-800">
+        <CardContent className="p-0">
+          <button
+            onClick={() => router.push(`/courses/${course.id}`)}
+            className="w-full text-left p-5"
+          >
+            <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <Badge className="border border-blue-500/20 bg-blue-500/10 text-blue-300 hover:bg-blue-500/10">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <Badge
+                    variant="outline"
+                    className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                  >
                     {course.code || "CS301"}
                   </Badge>
-
-                  <Badge className="border border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
-                    <Users className="mr-1 h-3 w-3" />
-                    {course.enrollments?.length || 0} Students
+                  <Badge
+                    variant="secondary"
+                    className="bg-gray-100 dark:bg-gray-800"
+                  >
+                    <Users className="w-3 h-3 mr-1" />
+                    {course.enrollments?.length || 0} students
                   </Badge>
-
                   {percentage && (
-                    <Badge className="border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/10">
+                    <Badge className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
                       {percentage}% Attendance
                     </Badge>
                   )}
                 </div>
-
-                <h3 className="text-xl font-bold text-white">{course.title}</h3>
-
-                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-400">
-                  {course.description ||
-                    "No description available for this course."}
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">
+                  {course.title}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                  {course.description?.substring(0, 100) ||
+                    "No description available"}
                 </p>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-400 transition-all group-hover:border-blue-500/20 group-hover:bg-blue-500/10 group-hover:text-blue-300">
-                <ChevronRight className="h-5 w-5" />
-              </div>
-            </div>
-
-            {/* Progress */}
-            {percentage && (
-              <div className="mt-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">
-                    Attendance Progress
-                  </span>
-
-                  <span className="text-xs font-bold text-white">
-                    {percentage}%
-                  </span>
+                {percentage && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Attendance Rate
+                      </span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                        {percentage}%
+                      </span>
+                    </div>
+                    <Progress value={percentage} className="h-2" />
+                  </div>
+                )}
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <Clock className="w-3 h-3" />
+                    {course.schedule || "Schedule TBD"}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <Calendar className="w-3 h-3" />
+                    {course.semester || "Current Semester"}
+                  </div>
                 </div>
-
-                <Progress value={percentage} className="h-2 bg-white/10" />
               </div>
-            )}
-
-            {/* Bottom */}
-            <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                {course.schedule || "Schedule TBD"}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" />
-                {course.semester || "Current Semester"}
-              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 mt-2 flex-shrink-0" />
             </div>
-          </CardContent>
-        </button>
+          </button>
+        </CardContent>
       </Card>
     </motion.div>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*                               ACTIVITY ITEM                                */
-/* -------------------------------------------------------------------------- */
-
+// Activity Item Component
 function ActivityItem({ icon: Icon, title, sub, time, color }) {
-  const styles = {
-    green: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    red: "bg-red-500/10 text-red-400 border-red-500/20",
-    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  const colorClasses = {
+    green:
+      "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400",
+    red: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
+    blue: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    amber:
+      "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
 
   return (
-    <div className="flex items-start gap-4 rounded-2xl p-3 transition-all hover:bg-white/[0.03]">
+    <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
       <div
-        className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${styles[color]}`}
+        className={`w-10 h-10 rounded-xl ${colorClasses[color]} flex items-center justify-center flex-shrink-0`}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="w-5 h-5" />
       </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white">{title}</p>
-
-        <p className="mt-1 text-xs text-slate-400">{sub}</p>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+          {title}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{sub}</p>
       </div>
-
-      <p className="text-xs text-slate-500 whitespace-nowrap">{time}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+        {time}
+      </p>
     </div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/*                             STUDENT DASHBOARD                              */
-/* -------------------------------------------------------------------------- */
 
 export default function StudentDashboard({ user }) {
   const router = useRouter();
@@ -228,188 +205,120 @@ export default function StudentDashboard({ user }) {
     studentData?.students?.find((s) => s.userId === user?.id)?.enrollments ||
     [];
 
+  // Sample recent activities - replace with actual API calls
   const recentActivities = [
     {
       icon: CheckCircle2,
-      title: "Attendance marked successfully",
+      title: "Marked present",
       sub: "CS301 — Data Structures",
       time: "2h ago",
       color: "green",
     },
     {
       icon: CheckCircle2,
-      title: "Lecture attended",
+      title: "Marked present",
       sub: "CS302 — Algorithms",
       time: "Yesterday",
       color: "green",
     },
     {
       icon: AlertCircle,
-      title: "Absent from lecture",
+      title: "Marked absent",
       sub: "MATH301 — Calculus",
       time: "2 days ago",
       color: "red",
     },
     {
       icon: BookOpen,
-      title: "New course enrollment",
+      title: "Enrolled in course",
       sub: "CS303 — Databases",
       time: "Last week",
       color: "blue",
     },
   ];
 
+  // Calculate average attendance (sample - replace with actual calculation)
   const averageAttendance = 87.5;
-  const perfectCourses = 3;
+  const perfectCourses = enrollments.filter((e, i) => i < 3).length; // Sample logic
   const weeklyAttendance = 8;
 
   return (
     <div className="w-full space-y-8 pb-10">
-      {/* HERO */}
+      {/* Hero Section with shadcn Card */}
       <motion.div
         variants={fadeUp}
         custom={0}
         initial="hidden"
         animate="visible"
       >
-        <Card className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#172554] shadow-2xl">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.25),transparent_30%)]" />
-
-          <div className="absolute -top-24 right-0 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-indigo-500/20 blur-3xl" />
-
-          <CardContent className="relative z-10 p-8 md:p-10">
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-              {/* Left */}
-              <div className="max-w-2xl">
-                <div className="mb-4 flex flex-wrap items-center gap-3">
-                  <Badge className="border border-white/10 bg-white/10 px-3 py-1 text-white hover:bg-white/10">
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    Student Portal
-                  </Badge>
-
-                  <Badge className="border border-blue-400/20 bg-blue-500/10 text-blue-200 hover:bg-blue-500/10">
-                    {enrollments.length} Active Courses
-                  </Badge>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16 border-2 border-white/10">
-                    <AvatarFallback className="bg-blue-500/10 text-lg font-bold text-blue-300">
-                      {user?.name
-                        ?.split(" ")
-                        ?.map((n) => n[0])
-                        ?.join("")
-                        ?.slice(0, 2) || "ST"}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div>
-                    <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
-                      Hey, {user?.name?.split(" ")[0] || "Student"}
-                    </h1>
-
-                    <p className="mt-2 text-base text-blue-100">
-                      Your attendance consistency is looking great this
-                      semester.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button
-                    onClick={() => router.push("/attendance")}
-                    className="h-11 rounded-xl bg-white text-blue-700 hover:bg-slate-100"
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    Mark Attendance
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push("/courses")}
-                    className="h-11 rounded-xl border-white/15 bg-white/5 text-white hover:bg-white/10"
-                  >
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    View Courses
-                  </Button>
-                </div>
-              </div>
-
-              {/* Right Indicators */}
-              <div className="grid grid-cols-2 gap-4 lg:w-[320px]">
-                {[
-                  {
-                    label: "Attendance",
-                    value: "87.5%",
-                  },
-                  {
-                    label: "Classes",
-                    value: "8 This Week",
-                  },
-                  {
-                    label: "Perfect",
-                    value: "3 Courses",
-                  },
-                  {
-                    label: "Status",
-                    value: "Excellent",
-                  },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl"
-                  >
-                    <p className="text-xs text-slate-400">{item.label}</p>
-
-                    <h4 className="mt-2 text-lg font-bold text-white">
-                      {item.value}
-                    </h4>
-                  </div>
-                ))}
-              </div>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-700 dark:via-blue-800 dark:to-indigo-900 border-none shadow-xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/20 rounded-full translate-y-16 -translate-x-16 blur-2xl" />
+          <CardContent className="relative z-10 p-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Badge
+                variant="secondary"
+                className="bg-white/20 text-white border-none"
+              >
+                Good morning 👋
+              </Badge>
+              <Badge variant="outline" className="border-white/30 text-white">
+                {enrollments.length} Courses
+              </Badge>
             </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+              {user?.name?.split(" ")[0] || "Student"}
+            </h2>
+            <p className="text-blue-100 text-base max-w-md">
+              Keep up the great attendance!
+            </p>
+
+            <Button
+              onClick={() => router.push("/attendance")}
+              variant="secondary"
+              className="mt-6 bg-white text-blue-600 hover:bg-gray-100 shadow-sm"
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              Mark Attendance
+            </Button>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {studentLoading ? (
           <>
-            <Skeleton className="h-32 rounded-3xl bg-white/5" />
-            <Skeleton className="h-32 rounded-3xl bg-white/5" />
-            <Skeleton className="h-32 rounded-3xl bg-white/5" />
-            <Skeleton className="h-32 rounded-3xl bg-white/5" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
           </>
         ) : (
           <>
             <StatCard
-              label="Enrolled Courses"
+              label="Enrolled"
               value={enrollments.length || "0"}
               icon={BookOpen}
-              subtext="Currently active"
+              subtext="Active courses"
               delay={1}
             />
-
             <StatCard
               label="Avg Attendance"
               value={`${averageAttendance}%`}
               icon={TrendingUp}
-              trend="+5.2% this month"
+              trend="+5.2% vs last month"
               delay={2}
             />
-
             <StatCard
-              label="Weekly Attendance"
+              label="This Week"
               value={weeklyAttendance}
               icon={Clock}
-              subtext="Lectures attended"
+              subtext="Classes attended"
               delay={3}
             />
-
             <StatCard
-              label="Perfect Records"
+              label="Perfect"
               value={perfectCourses}
               icon={Award}
               subtext="100% attendance"
@@ -419,47 +328,43 @@ export default function StudentDashboard({ user }) {
         )}
       </div>
 
-      {/* MAIN GRID */}
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-12">
-        {/* COURSES */}
-        <div className="xl:col-span-7 space-y-5">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* My Courses Section */}
+        <div className="lg:col-span-7 space-y-5">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold text-white">My Courses</h3>
-
-              <p className="mt-1 text-sm text-slate-400">
-                Track attendance and monitor progress.
-              </p>
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <h3 className="font-bold text-xl text-gray-900 dark:text-white">
+                My Courses
+              </h3>
             </div>
-
             <Button
               variant="ghost"
+              size="sm"
+              className="text-blue-600 dark:text-blue-400"
               onClick={() => router.push("/courses")}
-              className="text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
             >
-              View All
-              <ChevronRight className="ml-1 h-4 w-4" />
+              See all
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
 
           {studentLoading ? (
             <div className="space-y-4">
-              <Skeleton className="h-44 rounded-3xl bg-white/5" />
-              <Skeleton className="h-44 rounded-3xl bg-white/5" />
-              <Skeleton className="h-44 rounded-3xl bg-white/5" />
+              <Skeleton className="h-40 rounded-xl" />
+              <Skeleton className="h-40 rounded-xl" />
+              <Skeleton className="h-40 rounded-xl" />
             </div>
           ) : enrollments.length === 0 ? (
-            <Card className="border border-dashed border-white/10 bg-white/[0.02]">
-              <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                <GraduationCap className="h-12 w-12 text-slate-600" />
-
-                <h4 className="mt-4 text-lg font-semibold text-white">
-                  No enrolled courses
-                </h4>
-
-                <p className="mt-2 max-w-sm text-sm text-slate-400">
-                  Your enrolled courses will appear here once assigned by your
-                  department or admin.
+            <Card className="border-dashed border-2 border-gray-300 dark:border-gray-700">
+              <CardContent className="p-12 text-center">
+                <GraduationCap className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">
+                  No courses yet
+                </p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+                  Ask your admin to enroll you in courses
                 </p>
               </CardContent>
             </Card>
@@ -469,93 +374,72 @@ export default function StudentDashboard({ user }) {
                 <CourseCard
                   key={enrollment.id}
                   course={enrollment.course}
-                  percentage={87 - i * 5}
+                  percentage={87.5 - i * 5} // Sample percentages
                   delay={i}
                 />
               ))}
+              {enrollments.length > 3 && (
+                <Button
+                  variant="ghost"
+                  className="w-full text-blue-600 dark:text-blue-400"
+                  onClick={() => router.push("/courses")}
+                >
+                  View all {enrollments.length} courses
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
             </div>
           )}
         </div>
 
-        {/* RIGHT SIDEBAR */}
-        <div className="xl:col-span-5 space-y-6">
-          {/* ACTIVITY */}
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold text-white">
-                  Recent Activity
-                </h3>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  Your latest attendance events.
-                </p>
-              </div>
-
-              <Badge className="border border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
-                Last 7 Days
-              </Badge>
-            </div>
-
-            <Card className="border border-white/10 bg-[#0b1220]/90">
-              <CardContent className="p-4">
-                <div className="space-y-1">
-                  {recentActivities.map((activity, idx) => (
-                    <div key={idx}>
-                      <ActivityItem {...activity} />
-
-                      {idx < recentActivities.length - 1 && (
-                        <Separator className="my-2 bg-white/5" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push("/attendance/history")}
-                  className="mt-4 w-full text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
-                >
-                  View Full History
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+        {/* Recent Activity Section */}
+        <div className="lg:col-span-5 space-y-5">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-bold text-xl text-gray-900 dark:text-white">
+              Recent Activity
+            </h3>
           </div>
+          <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
+            <CardContent className="p-4">
+              <div className="space-y-1">
+                {recentActivities.map((activity, idx) => (
+                  <div key={idx}>
+                    <ActivityItem {...activity} />
+                    {idx < recentActivities.length - 1 && (
+                      <Separator className="my-2" />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <Button
+                variant="ghost"
+                className="w-full mt-4 text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                onClick={() => router.push("/attendance/history")}
+              >
+                View Full History
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
 
-          {/* ACHIEVEMENT */}
-          <Card className="overflow-hidden border border-amber-500/10 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10">
-                  <Award className="h-5 w-5 text-amber-400" />
+          {/* Achievement Card */}
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-none">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <Award className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-white">
-                      Achievement Unlocked
-                    </h4>
-
-                    <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-300 hover:bg-amber-500/10">
-                      Rare
-                    </Badge>
-                  </div>
-
-                  <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                    You've maintained over 90% attendance consistently for 3
-                    straight weeks.
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Achievement Unlocked
                   </p>
-
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-amber-300">
-                      Consistency Champion
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-400">
-                      Top-performing attendance streak.
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                    You've maintained 90%+ attendance for 3 consecutive weeks!
+                  </p>
+                  <Badge className="mt-2 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                    Consistency Champion
+                  </Badge>
                 </div>
               </div>
             </CardContent>
