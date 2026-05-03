@@ -23,32 +23,11 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Top Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 sticky top-0 z-40 mb-6">
-        <div className="flex items-center justify-between">
-          {/* Left side - Mobile logo */}
+      <header className="bg-white/5 backdrop-blur-2xl border-b border-gray-100 px-2 py-2 fixed top-2 z-40 mb-6 w-70 right-8 rounded-4xl">
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-4">
-            <div className="md:hidden w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-          </div>
-
-          {/* Right side - User Avatar & Menu */}
-          <div className="flex items-center gap-4">
-            {/* Role Badge */}
-            <div
-              className={`hidden sm:block text-[10px] uppercase tracking-widest font-black px-3 py-1.5 rounded-xl shadow-sm ${
-                isStudent
-                  ? "bg-blue-50 text-blue-600 border border-blue-100"
-                  : isLecturer
-                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                    : "bg-purple-50 text-purple-600 border border-purple-100"
-              }`}
-            >
-              {user?.role}
-            </div>
-
             {/* User Avatar Dropdown */}
             <div className="relative">
               <button

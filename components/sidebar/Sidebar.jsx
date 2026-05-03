@@ -52,7 +52,7 @@ export default function Sidebar() {
   const tabs = getTabsForRole(user?.role);
 
   return (
-    <div className="h-screen p-5 flex flex-col items-center justify-start pointer-events-none">
+    <div className="h-screen p-2 flex flex-col items-center justify-start pointer-events-none">
       {/* Premium Glass Container - Centered */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
