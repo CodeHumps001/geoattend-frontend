@@ -1,3 +1,5 @@
+"use client";
+
 // ── Stat Card ──────────────────────────────────────────────────
 export function ActivityItem({ icon: Icon, title, sub, time, color }) {
   const colors = {

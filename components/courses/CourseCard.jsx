@@ -1,5 +1,18 @@
-export default // ── Course Card ────────────────────────────────────────────────
-function CourseCard({ course, percentage, delay }) {
+"use client";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { ChevronRight, AlertCircle } from "lucide-react";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
+
+export default function CourseCard({ course, percentage, delay }) {
   const router = useRouter();
   const pct = percentage ?? 0;
   const color = pct >= 75 ? "emerald" : pct >= 50 ? "orange" : "red";
