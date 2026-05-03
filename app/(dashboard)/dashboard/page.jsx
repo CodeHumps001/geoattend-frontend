@@ -25,7 +25,7 @@ export default function DashboardPage() {
   return (
     <div className="w-full relative">
       {/* Top Header */}
-      <header className="bg-white/5 backdrop-blur-2xl border-b border-gray-100 px-2 py-2 fixed top-2 z-40 mb-6 w-70 right-8 rounded-4xl">
+      <header className=" backdrop-blur-2xl border-b  px-2 py-2 fixed top-2 z-40 mb-6 w-70 right-8 rounded-4xl">
         <div className="flex items-center justify-end">
           <div className="flex items-center gap-4">
             {/* User Avatar Dropdown */}
@@ -36,7 +36,7 @@ export default function DashboardPage() {
               >
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-violet-300 flex items-center justify-center shadow-md shadow-gray-200">
                     <span className="text-white font-bold text-sm">
                       {getInitials()}
                     </span>
@@ -46,10 +46,10 @@ export default function DashboardPage() {
 
                 {/* User Info */}
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-semibold text-gray-900 capitalize">
+                  <p className="text-sm font-semibold text-white capitalize">
                     {user?.name || user?.email?.split("@")[0]}
                   </p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-xs text-gray-400">{user?.email}</p>
                 </div>
 
                 {/* Chevron */}
@@ -124,7 +124,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <div className="w-full">
+      <div className="w-full mt-7">
         {isStudent && <StudentDashboard user={user} />}
         {isLecturer && <LecturerDashboard user={user} />}
         {isAdmin && <AdminDashboard user={user} />}
