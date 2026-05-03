@@ -80,15 +80,26 @@ function StudentRow({ enrollment, courseId, index }) {
 
   const getStatusBadge = () => {
     if (pct === null)
-      return { text: "No Data", color: "bg-gray-100 text-gray-600" };
+      return {
+        text: "No Data",
+        color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
+      };
     if (pct >= 75)
       return {
         text: "Good Standing",
-        color: "bg-emerald-100 text-emerald-700",
+        color:
+          "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
       };
     if (pct >= 50)
-      return { text: "At Risk", color: "bg-amber-100 text-amber-700" };
-    return { text: "Critical", color: "bg-red-100 text-red-700" };
+      return {
+        text: "At Risk",
+        color:
+          "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+      };
+    return {
+      text: "Critical",
+      color: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+    };
   };
 
   const status = getStatusBadge();
@@ -99,20 +110,26 @@ function StudentRow({ enrollment, courseId, index }) {
       custom={index}
       initial="hidden"
       animate="visible"
-      className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 px-4 rounded-xl transition-colors"
+      className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 px-4 rounded-xl transition-colors"
     >
       <div className="flex items-center gap-4">
-        <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-offset-2 ring-indigo-100">
+        <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-offset-2 ring-indigo-100 dark:ring-indigo-900">
           <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
             {initials}
           </AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-semibold text-gray-900">{user?.name}</p>
+          <p className="font-semibold text-gray-900 dark:text-white">
+            {user?.name}
+          </p>
           <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-xs text-gray-500">{student?.studentCode}</p>
-            <span className="text-xs text-gray-300">•</span>
-            <p className="text-xs text-gray-500">Level {student?.level}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {student?.studentCode}
+            </p>
+            <span className="text-xs text-gray-300 dark:text-gray-600">•</span>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Level {student?.level}
+            </p>
           </div>
         </div>
       </div>
@@ -122,7 +139,13 @@ function StudentRow({ enrollment, courseId, index }) {
             <Progress value={pctNumber} className="h-2" />
           </div>
           <p
-            className={`font-bold text-sm ${pctNumber >= 75 ? "text-emerald-600" : pctNumber >= 50 ? "text-amber-600" : "text-red-600"}`}
+            className={`font-bold text-sm ${
+              pctNumber >= 75
+                ? "text-emerald-600 dark:text-emerald-400"
+                : pctNumber >= 50
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-red-600 dark:text-red-400"
+            }`}
           >
             {pct !== null ? `${pct.toFixed(1)}%` : "—"}
           </p>
@@ -153,27 +176,31 @@ function SessionRow({ session, index }) {
       animate="visible"
       whileHover={{ x: 4 }}
       onClick={() => router.push(`/sessions/${session.id}`)}
-      className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 px-4 rounded-xl transition-all cursor-pointer group"
+      className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 px-4 rounded-xl transition-all cursor-pointer group"
     >
       <div className="flex items-center gap-4">
         <div
           className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            isLive ? "bg-emerald-100" : isActive ? "bg-blue-100" : "bg-gray-100"
+            isLive
+              ? "bg-emerald-100 dark:bg-emerald-900/30"
+              : isActive
+                ? "bg-blue-100 dark:bg-blue-900/30"
+                : "bg-gray-100 dark:bg-gray-800"
           }`}
         >
           <PlayCircle
             className={`w-6 h-6 ${
               isLive
-                ? "text-emerald-600"
+                ? "text-emerald-600 dark:text-emerald-400"
                 : isActive
-                  ? "text-blue-600"
-                  : "text-gray-400"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-400 dark:text-gray-600"
             }`}
           />
         </div>
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <p className="font-semibold text-gray-900">
+            <p className="font-semibold text-gray-900 dark:text-white">
               {new Date(session.date).toLocaleDateString("en-GB", {
                 day: "numeric",
                 month: "long",
@@ -181,13 +208,13 @@ function SessionRow({ session, index }) {
               })}
             </p>
             {isLive && (
-              <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-bold">
+              <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-0 text-xs font-bold">
                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse inline-block" />
                 LIVE NOW
               </Badge>
             )}
           </div>
-          <p className="text-sm text-gray-500 flex items-center gap-2">
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
             <Clock className="w-3.5 h-3.5" />
             {new Date(session.startTime).toLocaleTimeString([], {
               hour: "2-digit",
@@ -204,15 +231,15 @@ function SessionRow({ session, index }) {
       <div className="text-right">
         <div className="flex items-center gap-3">
           <div>
-            <p className="font-bold text-gray-900 text-lg">
+            <p className="font-bold text-gray-900 dark:text-white text-lg">
               {presentCount}/{totalCount}
             </p>
-            <p className="text-xs text-gray-400">present</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">present</p>
           </div>
           <div className="w-20">
             <Progress value={attendanceRate} className="h-2" />
           </div>
-          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+          <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors" />
         </div>
       </div>
     </motion.div>
@@ -220,14 +247,7 @@ function SessionRow({ session, index }) {
 }
 
 // Stats Card Component
-function StatsCard({ title, value, icon: Icon, color, delay, subtitle }) {
-  const colors = {
-    blue: "from-blue-500 to-blue-600",
-    emerald: "from-emerald-500 to-emerald-600",
-    purple: "from-purple-500 to-purple-600",
-    orange: "from-orange-500 to-orange-600",
-  };
-
+function StatsCard({ title, value, icon: Icon, gradient, delay, subtitle }) {
   return (
     <motion.div
       variants={fadeUp}
@@ -235,18 +255,24 @@ function StatsCard({ title, value, icon: Icon, color, delay, subtitle }) {
       initial="hidden"
       animate="visible"
     >
-      <Card className="border border-gray-100 hover:shadow-lg transition-all duration-300 group">
+      <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 group bg-white dark:bg-gray-900">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">{title}</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                {title}
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+                {value}
+              </p>
               {subtitle && (
-                <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  {subtitle}
+                </p>
               )}
             </div>
             <div
-              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center group-hover:scale-110 transition-transform`}
+              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center group-hover:scale-110 transition-transform`}
             >
               <Icon className="w-6 h-6 text-white" />
             </div>
@@ -261,12 +287,14 @@ function StatsCard({ title, value, icon: Icon, color, delay, subtitle }) {
 function InfoRow({ icon: Icon, label, value }) {
   return (
     <div className="flex items-center gap-3 py-2">
-      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-        <Icon className="w-4 h-4 text-gray-500" />
+      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
       </div>
       <div>
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm font-medium text-gray-900">{value || "—"}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+        <p className="text-sm font-medium text-gray-900 dark:text-white">
+          {value || "—"}
+        </p>
       </div>
     </div>
   );
@@ -327,10 +355,12 @@ export default function CourseDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Loading course details...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Loading course details...
+          </p>
         </div>
       </div>
     );
@@ -338,9 +368,11 @@ export default function CourseDetailPage() {
 
   if (error || !course) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center px-5">
-        <BookOpen className="w-16 h-16 text-gray-300 mb-4" />
-        <p className="text-gray-500 font-semibold text-lg">Course not found</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center px-5">
+        <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">
+          Course not found
+        </p>
         <Button
           variant="outline"
           onClick={() => router.back()}
@@ -353,13 +385,13 @@ export default function CourseDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 pt-8 pb-6 sticky top-0 z-40">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-6 pt-8 pb-6 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors mb-4"
+            className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back to Courses</span>
@@ -371,19 +403,24 @@ export default function CourseDetailPage() {
                 <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 font-bold">
                   {course.code}
                 </Badge>
-                <Badge variant="outline" className="text-gray-500">
+                <Badge
+                  variant="outline"
+                  className="text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                >
                   {course.semester}
                 </Badge>
               </div>
-              <h1 className="text-3xl font-black text-gray-900">
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white">
                 {course.name}
               </h1>
-              <p className="text-gray-500 text-sm mt-1">{course.department}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                {course.department}
+              </p>
             </div>
             {(isLecturer || isAdmin) && (
               <Button
                 onClick={() => router.push("/sessions")}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-200"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-md shadow-indigo-200 dark:shadow-indigo-900/30"
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
                 Start New Session
@@ -404,9 +441,9 @@ export default function CourseDetailPage() {
               initial="hidden"
               animate="visible"
             >
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-white dark:bg-gray-900">
                 <CardHeader>
-                  <CardTitle className="text-lg font-bold text-gray-900">
+                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
                     Course Information
                   </CardTitle>
                 </CardHeader>
@@ -426,7 +463,7 @@ export default function CourseDetailPage() {
                     label="Semester"
                     value={course.semester}
                   />
-                  <Separator />
+                  <Separator className="bg-gray-200 dark:bg-gray-700" />
                   {course.lecturer && (
                     <div className="flex items-center gap-3 pt-2">
                       <Avatar className="w-12 h-12">
@@ -435,11 +472,13 @@ export default function CourseDetailPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-xs text-gray-400">Course Lecturer</p>
-                        <p className="font-semibold text-gray-900">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          Course Lecturer
+                        </p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
                           {course.lecturer.user?.name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {course.lecturer.user?.email}
                         </p>
                       </div>
@@ -456,19 +495,19 @@ export default function CourseDetailPage() {
               initial="hidden"
               animate="visible"
             >
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-purple-50">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30">
                 <CardHeader>
-                  <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <Award className="w-5 h-5 text-indigo-600" />
+                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Award className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     Quick Stats
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       Course Progress
                     </span>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
                       {completedSessions}/{totalSessions} sessions
                     </span>
                   </div>
@@ -482,14 +521,18 @@ export default function CourseDetailPage() {
                   />
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     <div>
-                      <p className="text-xs text-gray-500">Active Sessions</p>
-                      <p className="text-xl font-bold text-emerald-600">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Active Sessions
+                      </p>
+                      <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
                         {activeSessions}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Upcoming</p>
-                      <p className="text-xl font-bold text-blue-600">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Upcoming
+                      </p>
+                      <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
                         {upcomingSessions}
                       </p>
                     </div>
@@ -507,7 +550,7 @@ export default function CourseDetailPage() {
                 title="Enrolled Students"
                 value={totalStudents}
                 icon={Users}
-                color="blue"
+                gradient="from-blue-500 to-blue-600"
                 delay={2}
                 subtitle="active enrollments"
               />
@@ -515,7 +558,7 @@ export default function CourseDetailPage() {
                 title="Total Sessions"
                 value={totalSessions}
                 icon={PlayCircle}
-                color="emerald"
+                gradient="from-emerald-500 to-emerald-600"
                 delay={3}
                 subtitle={`${completedSessions} completed`}
               />
@@ -523,7 +566,7 @@ export default function CourseDetailPage() {
                 title="Avg Attendance"
                 value={overallAttendance}
                 icon={TrendingUp}
-                color="purple"
+                gradient="from-purple-500 to-purple-600"
                 delay={4}
                 subtitle="overall rate"
               />
@@ -536,20 +579,20 @@ export default function CourseDetailPage() {
               initial="hidden"
               animate="visible"
             >
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-white dark:bg-gray-900">
                 <CardHeader className="pb-3">
                   <Tabs defaultValue="students" className="w-full">
-                    <TabsList className="w-full bg-gray-100 rounded-xl p-1 h-12">
+                    <TabsList className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl p-1 h-12">
                       <TabsTrigger
                         value="students"
-                        className="flex-1 rounded-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm"
+                        className="flex-1 rounded-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm text-sm"
                       >
                         <Users className="w-4 h-4 mr-2" />
                         Students ({totalStudents})
                       </TabsTrigger>
                       <TabsTrigger
                         value="sessions"
-                        className="flex-1 rounded-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm"
+                        className="flex-1 rounded-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm text-sm"
                       >
                         <PlayCircle className="w-4 h-4 mr-2" />
                         Sessions ({totalSessions})
@@ -560,18 +603,18 @@ export default function CourseDetailPage() {
                     <TabsContent value="students" className="mt-4">
                       {enrollments.length === 0 ? (
                         <div className="py-16 text-center">
-                          <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                          <p className="text-gray-500 font-semibold text-lg">
+                          <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                          <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">
                             No students enrolled
                           </p>
-                          <p className="text-gray-400 text-sm mt-2">
+                          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                             {isAdmin
                               ? "Enroll students to get started"
                               : "Ask an admin to enroll students"}
                           </p>
                         </div>
                       ) : (
-                        <div className="divide-y divide-gray-100">
+                        <div className="divide-y divide-gray-100 dark:divide-gray-800">
                           {enrollments.map((enrollment, i) => (
                             <StudentRow
                               key={enrollment.id}
@@ -588,11 +631,11 @@ export default function CourseDetailPage() {
                     <TabsContent value="sessions" className="mt-4">
                       {sessions.length === 0 ? (
                         <div className="py-16 text-center">
-                          <PlayCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                          <p className="text-gray-500 font-semibold text-lg">
+                          <PlayCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                          <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">
                             No sessions yet
                           </p>
-                          <p className="text-gray-400 text-sm mt-2">
+                          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                             {isLecturer || isAdmin
                               ? "Start your first session"
                               : "Sessions will appear here"}
@@ -600,7 +643,7 @@ export default function CourseDetailPage() {
                           {(isLecturer || isAdmin) && (
                             <Button
                               onClick={() => router.push("/sessions")}
-                              className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600"
+                              className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                             >
                               <Plus className="w-4 h-4 mr-2" />
                               Start First Session
@@ -608,7 +651,7 @@ export default function CourseDetailPage() {
                           )}
                         </div>
                       ) : (
-                        <div className="divide-y divide-gray-100">
+                        <div className="divide-y divide-gray-100 dark:divide-gray-800">
                           {sessions.map((session, i) => (
                             <SessionRow
                               key={session.id}

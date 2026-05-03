@@ -39,14 +39,7 @@ const fadeUp = {
 };
 
 // Stats Card Component
-function StatsCard({ title, value, icon: Icon, color, delay }) {
-  const colors = {
-    blue: "from-blue-500 to-blue-600",
-    emerald: "from-emerald-500 to-emerald-600",
-    purple: "from-purple-500 to-purple-600",
-    orange: "from-orange-500 to-orange-600",
-  };
-
+function StatsCard({ title, value, icon: Icon, gradient, delay }) {
   return (
     <motion.div
       variants={fadeUp}
@@ -55,15 +48,19 @@ function StatsCard({ title, value, icon: Icon, color, delay }) {
       animate="visible"
       className="h-full"
     >
-      <Card className="h-full border border-gray-100 hover:shadow-lg transition-all duration-300 group">
+      <Card className="h-full border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 group bg-white dark:bg-gray-900">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-              <p className="text-2xl font-bold text-gray-900">{value}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                {title}
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {value}
+              </p>
             </div>
             <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center group-hover:scale-110 transition-transform`}
+              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center group-hover:scale-110 transition-transform`}
             >
               <Icon className="w-5 h-5 text-white" />
             </div>
@@ -82,14 +79,18 @@ function InfoRow({ icon: Icon, label, value, delay }) {
       custom={delay}
       initial="hidden"
       animate="visible"
-      className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0"
+      className="flex items-center gap-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0"
     >
-      <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4 h-4 text-gray-500" />
+      <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
       </div>
       <div className="flex-1">
-        <p className="text-xs font-medium text-gray-400">{label}</p>
-        <p className="text-gray-900 font-semibold text-sm">{value || "—"}</p>
+        <p className="text-xs font-medium text-gray-400 dark:text-gray-500">
+          {label}
+        </p>
+        <p className="text-gray-900 dark:text-white font-semibold text-sm">
+          {value || "—"}
+        </p>
       </div>
     </motion.div>
   );
@@ -106,25 +107,29 @@ function MenuItem({ icon: Icon, label, sub, onClick, delay, danger }) {
       whileHover={{ x: 4 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="w-full flex items-center gap-4 py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-all group"
+      className="w-full flex items-center gap-4 py-3.5 px-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group"
     >
       <div
-        className={`w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}
+        className={`w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}
       >
         <Icon
-          className={`w-4 h-4 ${danger ? "text-red-500" : "text-gray-500"}`}
+          className={`w-4 h-4 ${danger ? "text-red-500 dark:text-red-400" : "text-gray-500 dark:text-gray-400"}`}
         />
       </div>
       <div className="flex-1 text-left">
         <p
-          className={`font-semibold text-sm ${danger ? "text-red-500" : "text-gray-700"}`}
+          className={`font-semibold text-sm ${danger ? "text-red-500 dark:text-red-400" : "text-gray-700 dark:text-gray-300"}`}
         >
           {label}
         </p>
-        {sub && <p className="text-gray-400 text-xs mt-0.5">{sub}</p>}
+        {sub && (
+          <p className="text-gray-400 dark:text-gray-500 text-xs mt-0.5">
+            {sub}
+          </p>
+        )}
       </div>
       <ChevronRight
-        className={`w-4 h-4 ${danger ? "text-red-300" : "text-gray-300"} flex-shrink-0`}
+        className={`w-4 h-4 ${danger ? "text-red-300 dark:text-red-700" : "text-gray-300 dark:text-gray-600"} flex-shrink-0`}
       />
     </motion.button>
   );
@@ -137,19 +142,21 @@ export default function ProfilePage() {
   const roleConfig = {
     STUDENT: {
       gradient: "from-blue-600 to-indigo-600",
-      badge: "bg-blue-100 text-blue-700",
+      badge: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
       icon: GraduationCap,
       title: "Student Profile",
     },
     LECTURER: {
       gradient: "from-emerald-600 to-teal-600",
-      badge: "bg-emerald-100 text-emerald-700",
+      badge:
+        "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
       icon: Users,
       title: "Lecturer Profile",
     },
     ADMIN: {
       gradient: "from-violet-600 to-purple-600",
-      badge: "bg-violet-100 text-violet-700",
+      badge:
+        "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400",
       icon: Shield,
       title: "Admin Profile",
     },
@@ -164,23 +171,33 @@ export default function ProfilePage() {
       .toUpperCase()
       .slice(0, 2) || "U";
 
-  // Mock stats - replace with real data from API
+  // Stats - replace with real data from API
   const stats = isStudent
     ? [
         {
           title: "Courses Enrolled",
           value: "4",
           icon: BookOpen,
-          color: "blue",
+          gradient: "from-blue-500 to-blue-600",
         },
         {
           title: "Attendance Rate",
           value: "94%",
           icon: TrendingUp,
-          color: "emerald",
+          gradient: "from-emerald-500 to-emerald-600",
         },
-        { title: "Perfect Weeks", value: "3", icon: Award, color: "purple" },
-        { title: "Days Present", value: "28", icon: Calendar, color: "orange" },
+        {
+          title: "Perfect Weeks",
+          value: "3",
+          icon: Award,
+          gradient: "from-purple-500 to-purple-600",
+        },
+        {
+          title: "Days Present",
+          value: "28",
+          icon: Calendar,
+          gradient: "from-orange-500 to-orange-600",
+        },
       ]
     : isLecturer
       ? [
@@ -188,58 +205,63 @@ export default function ProfilePage() {
             title: "Courses Teaching",
             value: "3",
             icon: BookOpen,
-            color: "blue",
+            gradient: "from-blue-500 to-blue-600",
           },
           {
             title: "Total Students",
             value: "156",
             icon: Users,
-            color: "emerald",
+            gradient: "from-emerald-500 to-emerald-600",
           },
           {
             title: "Avg Attendance",
             value: "88%",
             icon: TrendingUp,
-            color: "purple",
+            gradient: "from-purple-500 to-purple-600",
           },
           {
             title: "Active Sessions",
             value: "2",
             icon: Clock,
-            color: "orange",
+            gradient: "from-orange-500 to-orange-600",
           },
         ]
       : [
-          { title: "Total Users", value: "1,247", icon: Users, color: "blue" },
+          {
+            title: "Total Users",
+            value: "1,247",
+            icon: Users,
+            gradient: "from-blue-500 to-blue-600",
+          },
           {
             title: "Active Courses",
             value: "42",
             icon: BookOpen,
-            color: "emerald",
+            gradient: "from-emerald-500 to-emerald-600",
           },
           {
             title: "Sessions Today",
             value: "18",
             icon: Clock,
-            color: "purple",
+            gradient: "from-purple-500 to-purple-600",
           },
           {
             title: "System Health",
             value: "99.9%",
             icon: Shield,
-            color: "orange",
+            gradient: "from-orange-500 to-orange-600",
           },
         ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 pt-8 pb-6 sticky top-0 z-40">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-6 pt-8 pb-6 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
             Profile
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Manage your account and preferences
           </p>
         </div>
@@ -256,53 +278,61 @@ export default function ProfilePage() {
               initial="hidden"
               animate="visible"
             >
-              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
+              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
                 <div
                   className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${config.gradient} opacity-5 rounded-full blur-3xl`}
                 />
                 <CardContent className="p-6 text-center">
                   <div className="relative inline-block">
-                    <Avatar className="w-24 h-24 mx-auto ring-4 ring-white shadow-xl">
+                    <Avatar className="w-24 h-24 mx-auto ring-4 ring-white dark:ring-gray-800 shadow-xl">
                       <AvatarFallback
                         className={`text-3xl font-bold bg-gradient-to-br ${config.gradient} text-white`}
                       >
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-3 border-white" />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-3 border-white dark:border-gray-900" />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900 mt-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-4">
                     {user?.name}
                   </h2>
-                  <p className="text-gray-500 text-sm mt-1">{user?.email}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                    {user?.email}
+                  </p>
                   <Badge
                     className={`mt-3 ${config.badge} border-0 font-semibold`}
                   >
                     {user?.role}
                   </Badge>
 
-                  <Separator className="my-4" />
+                  <Separator className="my-4 bg-gray-200 dark:bg-gray-700" />
 
                   <div className="flex justify-around">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {isStudent ? "4" : isLecturer ? "3" : "42"}
                       </p>
-                      <p className="text-xs text-gray-500">Courses</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Courses
+                      </p>
                     </div>
-                    <div className="w-px h-8 bg-gray-200" />
+                    <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {isStudent ? "94%" : isLecturer ? "88%" : "99.9%"}
                       </p>
-                      <p className="text-xs text-gray-500">Activity</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Activity
+                      </p>
                     </div>
-                    <div className="w-px h-8 bg-gray-200" />
+                    <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {isStudent ? "Mar 2025" : isLecturer ? "5 yrs" : "100%"}
                       </p>
-                      <p className="text-xs text-gray-500">Joined</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Joined
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -317,7 +347,7 @@ export default function ProfilePage() {
                   title={stat.title}
                   value={stat.value}
                   icon={stat.icon}
-                  color={stat.color}
+                  gradient={stat.gradient}
                   delay={idx + 1}
                 />
               ))}
@@ -333,15 +363,15 @@ export default function ProfilePage() {
               initial="hidden"
               animate="visible"
             >
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-white dark:bg-gray-900">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-blue-600" />
-                    <CardTitle className="text-lg font-bold text-gray-900">
+                    <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
                       Personal Information
                     </CardTitle>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Your account details
                   </p>
                 </CardHeader>
@@ -419,15 +449,15 @@ export default function ProfilePage() {
                 initial="hidden"
                 animate="visible"
               >
-                <Card className="border-0 shadow-lg h-full">
+                <Card className="border-0 shadow-lg h-full bg-white dark:bg-gray-900">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-gray-600" />
-                      <CardTitle className="text-lg font-bold text-gray-900">
+                      <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
                         Settings
                       </CardTitle>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       Customize your experience
                     </p>
                   </CardHeader>
@@ -439,7 +469,7 @@ export default function ProfilePage() {
                       delay={12}
                       onClick={() => {}}
                     />
-                    <Separator className="mx-4 w-auto" />
+                    <Separator className="mx-4 w-auto bg-gray-200 dark:bg-gray-800" />
                     <MenuItem
                       icon={Shield}
                       label="Security"
@@ -447,7 +477,7 @@ export default function ProfilePage() {
                       delay={13}
                       onClick={() => {}}
                     />
-                    <Separator className="mx-4 w-auto" />
+                    <Separator className="mx-4 w-auto bg-gray-200 dark:bg-gray-800" />
                     <MenuItem
                       icon={Settings}
                       label="Preferences"
@@ -466,15 +496,15 @@ export default function ProfilePage() {
                 initial="hidden"
                 animate="visible"
               >
-                <Card className="border-0 shadow-lg h-full">
+                <Card className="border-0 shadow-lg h-full bg-white dark:bg-gray-900">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
-                      <HelpCircle className="w-5 h-5 text-green-600" />
-                      <CardTitle className="text-lg font-bold text-gray-900">
+                      <HelpCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
                         Support
                       </CardTitle>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       Get help when you need it
                     </p>
                   </CardHeader>
@@ -486,7 +516,7 @@ export default function ProfilePage() {
                       delay={16}
                       onClick={() => {}}
                     />
-                    <Separator className="mx-4 w-auto" />
+                    <Separator className="mx-4 w-auto bg-gray-200 dark:bg-gray-800" />
                     <MenuItem
                       icon={BookOpen}
                       label="Documentation"
@@ -494,7 +524,7 @@ export default function ProfilePage() {
                       delay={17}
                       onClick={() => {}}
                     />
-                    <Separator className="mx-4 w-auto" />
+                    <Separator className="mx-4 w-auto bg-gray-200 dark:bg-gray-800" />
                     <MenuItem
                       icon={Star}
                       label="Send Feedback"
@@ -514,7 +544,7 @@ export default function ProfilePage() {
               initial="hidden"
               animate="visible"
             >
-              <Card className="border-0 shadow-lg border-red-100 bg-gradient-to-r from-white to-red-50/30">
+              <Card className="border-0 shadow-lg border-red-100 dark:border-red-900/30 bg-gradient-to-r from-white to-red-50/30 dark:from-gray-900 dark:to-red-950/20">
                 <CardContent className="p-0">
                   <MenuItem
                     icon={LogOut}
@@ -534,7 +564,7 @@ export default function ProfilePage() {
               custom={21}
               initial="hidden"
               animate="visible"
-              className="text-center text-gray-400 text-xs py-4"
+              className="text-center text-gray-400 dark:text-gray-500 text-xs py-4"
             >
               KlassRep v2.0.0 · Built by Fosu Yaw Humphrey
             </motion.p>
