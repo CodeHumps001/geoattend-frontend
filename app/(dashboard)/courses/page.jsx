@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Users,
   PlayCircle,
-  Filter,
   GraduationCap,
   X,
   LayoutGrid,
@@ -97,7 +96,7 @@ function CourseCard({ course, role, index }) {
                   {course.semester}
                 </Badge>
               </div>
-              <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight mb-1">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight mb-1 line-clamp-2">
                 {course.name}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 text-xs">
@@ -156,7 +155,7 @@ function CourseCard({ course, role, index }) {
   );
 }
 
-// Stats Card Component
+// Stats Card Component (compact for horizontal scroll)
 function StatsCard({ title, value, icon: Icon, gradient, delay }) {
   return (
     <motion.div
@@ -164,24 +163,20 @@ function StatsCard({ title, value, icon: Icon, gradient, delay }) {
       custom={delay}
       initial="hidden"
       animate="visible"
-      className="col-span-1"
+      className="flex-shrink-0 w-[120px]"
     >
       <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                {title}
-              </p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
-                {value}
-              </p>
-            </div>
+        <CardContent className="p-3">
+          <div className="flex flex-col items-center text-center">
             <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm`}
+              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm mb-2`}
             >
               <Icon className="w-5 h-5 text-white" />
             </div>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">
+              {value}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{title}</p>
           </div>
         </CardContent>
       </Card>
@@ -299,36 +294,38 @@ export default function CoursesPage() {
             )}
           </div>
 
-          {/* Stats Cards - Horizontal scroll on mobile */}
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            <StatsCard
-              title="Total"
-              value={totalCourses}
-              icon={BookOpen}
-              gradient="from-blue-500 to-blue-600"
-              delay={0}
-            />
-            <StatsCard
-              title="Students"
-              value={totalStudents}
-              icon={Users}
-              gradient="from-emerald-500 to-emerald-600"
-              delay={1}
-            />
-            <StatsCard
-              title="Sessions"
-              value={totalSessions}
-              icon={PlayCircle}
-              gradient="from-purple-500 to-purple-600"
-              delay={2}
-            />
-            <StatsCard
-              title="Active"
-              value={activeCourses}
-              icon={TrendingUp}
-              gradient="from-orange-500 to-orange-600"
-              delay={3}
-            />
+          {/* Stats Cards - Horizontal scroll (no visible scrollbar) */}
+          <div className="mb-3 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 min-w-min">
+              <StatsCard
+                title="Courses"
+                value={totalCourses}
+                icon={BookOpen}
+                gradient="from-blue-500 to-blue-600"
+                delay={0}
+              />
+              <StatsCard
+                title="Students"
+                value={totalStudents}
+                icon={Users}
+                gradient="from-emerald-500 to-emerald-600"
+                delay={1}
+              />
+              <StatsCard
+                title="Sessions"
+                value={totalSessions}
+                icon={PlayCircle}
+                gradient="from-purple-500 to-purple-600"
+                delay={2}
+              />
+              <StatsCard
+                title="Active"
+                value={activeCourses}
+                icon={TrendingUp}
+                gradient="from-orange-500 to-orange-600"
+                delay={3}
+              />
+            </div>
           </div>
 
           {/* Search and Filter */}
@@ -343,7 +340,7 @@ export default function CoursesPage() {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
@@ -539,6 +536,17 @@ export default function CoursesPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Hide scrollbar styles */}
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }
