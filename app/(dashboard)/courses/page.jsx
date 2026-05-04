@@ -171,32 +171,23 @@ export default function CoursesPage() {
     setMounted(true);
   }, []);
 
-  // Fetch current user's student record
-  const { data: currentStudent, isLoading: studentLoading } = useQuery({
-    queryKey: ["current-student", user?.id],
+  // First, get the current student ID if user is a student
+  const { data: studentData } = useQuery({
+    queryKey: ["current-student", user?.email],
     queryFn: async () => {
-      if (!isStudent || !user?.id) return null;
-      try {
-        // Get all students and find the one matching the current user
-        const res = await api.get("/api/v1/students");
-        const students = res.data.data?.students || [];
-        const found = students.find((s) => s.userId === user?.id);
-        console.log("Found student:", found);
-        return found;
-      } catch (err) {
-        console.error("Failed to fetch student:", err);
-        return null;
-      }
+      if (!isStudent || !user?.email) return null;
+      const res = await api.get("/api/v1/students");
+      const students = res.data.data?.students || [];
+      const currentStudent = students.find(
+        (s) => s.user?.email === user?.email,
+      );
+      return currentStudent;
     },
-    enabled: isStudent && mounted,
+    enabled: isStudent && !!user?.email && mounted,
   });
 
   // Fetch all courses
-  const {
-    data,
-    isLoading: coursesLoading,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["courses", mounted],
     queryFn: async () => {
       const res = await api.get("/api/v1/courses");
@@ -208,30 +199,17 @@ export default function CoursesPage() {
   const allCourses = data?.courses || [];
 
   // Filter courses based on role
-  let visibleCourses = [];
-
-  if (isStudent) {
-    // For students: filter courses where student is enrolled
-    if (currentStudent) {
-      visibleCourses = allCourses.filter((course) => {
-        const isEnrolled = course.enrollments?.some(
-          (enrollment) => enrollment.studentId === currentStudent.id,
-        );
-        return isEnrolled;
-      });
+  const visibleCourses = allCourses.filter((course) => {
+    if (isLecturer) {
+      return course.lecturer?.user?.email === user?.email;
     }
-    console.log("Student ID:", currentStudent?.id);
-    console.log("All courses:", allCourses.length);
-    console.log("Enrolled courses:", visibleCourses.length);
-  } else if (isLecturer) {
-    // For lecturers: courses they teach
-    visibleCourses = allCourses.filter(
-      (course) => course.lecturer?.user?.email === user?.email,
-    );
-  } else {
-    // For admins: all courses
-    visibleCourses = allCourses;
-  }
+    if (isStudent && studentData) {
+      return course.enrollments?.some(
+        (enrollment) => enrollment.studentId === studentData.id,
+      );
+    }
+    return true;
+  });
 
   // Get unique departments for filter
   const departments = [
@@ -248,8 +226,6 @@ export default function CoursesPage() {
       departmentFilter === "all" || c.department === departmentFilter;
     return matchesSearch && matchesDepartment;
   });
-
-  const isLoading = coursesLoading || (isStudent && studentLoading);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -305,9 +281,9 @@ export default function CoursesPage() {
               </h1>
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
                 {isStudent
-                  ? `${filtered.length} enrolled course${filtered.length !== 1 ? "s" : ""}`
+                  ? "Your enrolled courses"
                   : isLecturer
-                    ? `${filtered.length} course${filtered.length !== 1 ? "s" : ""} you teach`
+                    ? "Courses you teach"
                     : `${filtered.length} courses available`}
               </p>
             </div>
@@ -383,24 +359,6 @@ export default function CoursesPage() {
                     ? "Try adjusting your search"
                     : "Create your first course"}
             </p>
-            {isStudent && (
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => router.push("/users")}
-              >
-                Contact Admin
-              </Button>
-            )}
-            {isLecturer && filtered.length === 0 && (
-              <Button
-                className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                onClick={() => setShowCreateModal(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Course
-              </Button>
-            )}
           </div>
         ) : (
           <div className="space-y-3">
