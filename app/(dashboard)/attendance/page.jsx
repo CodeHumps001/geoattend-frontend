@@ -54,12 +54,15 @@ const fadeUp = {
 };
 
 // Enhanced Attendance Card Component
-function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
+function AttendanceCard({ session, onMark, marking, attendanceStatus }) {
   const now = new Date();
   const start = new Date(session.startTime);
   const end = new Date(session.endTime);
   const isActive = now >= start && now <= end;
   const isFuture = now < start;
+
+  const hasAttended = attendanceStatus !== null;
+  const isPresent = attendanceStatus === "PRESENT";
 
   return (
     <motion.div
@@ -138,7 +141,7 @@ function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
               <MapPin className="w-4 h-4" />
               <span>{session.radiusMeters}m check-in radius</span>
             </div>
-            {!alreadyMarked && isFuture && (
+            {!hasAttended && isFuture && (
               <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-500">
                 <Clock className="w-3 h-3" />
                 <span>Starts soon</span>
@@ -146,21 +149,47 @@ function AttendanceCard({ session, onMark, marking, alreadyMarked }) {
             )}
           </div>
 
-          {alreadyMarked ? (
+          {hasAttended ? (
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3"
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 ${
+                isPresent
+                  ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
+                  : "bg-gradient-to-r from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20 border border-red-200 dark:border-red-800"
+              }`}
             >
-              <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
-                <CheckCircle2 className="w-5 h-5 text-white" />
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md ${
+                  isPresent ? "bg-emerald-500" : "bg-red-500"
+                }`}
+              >
+                {isPresent ? (
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-white" />
+                )}
               </div>
               <div>
-                <p className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">
-                  Attendance Marked!
+                <p
+                  className={`font-bold text-sm ${
+                    isPresent
+                      ? "text-emerald-700 dark:text-emerald-400"
+                      : "text-red-700 dark:text-red-400"
+                  }`}
+                >
+                  {isPresent ? "You're Present!" : "You're Absent"}
                 </p>
-                <p className="text-emerald-600 dark:text-emerald-400 text-xs">
-                  You're recorded as present
+                <p
+                  className={`text-xs ${
+                    isPresent
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
+                  {isPresent
+                    ? "Attendance recorded successfully"
+                    : "You were outside the allowed radius"}
                 </p>
               </div>
             </motion.div>
@@ -342,7 +371,6 @@ export default function AttendancePage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [marking, setMarking] = useState(null);
-  const [markedSessions, setMarkedSessions] = useState([]);
   const [showGPSTest, setShowGPSTest] = useState(false);
   const [customLocation, setCustomLocation] = useState(null);
   const [activeTab, setActiveTab] = useState("active");
@@ -385,6 +413,37 @@ export default function AttendancePage() {
     enrolledCourseIds.includes(session.courseId),
   );
 
+  // Fetch attendance status for each session (both present and absent)
+  const { data: attendanceStatuses, refetch: refetchAttendance } = useQuery({
+    queryKey: [
+      "attendance-statuses",
+      studentId,
+      enrolledSessions.map((s) => s.id),
+    ],
+    queryFn: async () => {
+      if (!studentId || enrolledSessions.length === 0) return {};
+
+      const statuses = {};
+      for (const session of enrolledSessions) {
+        try {
+          const res = await api.get(`/api/v1/attendance/session/${session.id}`);
+          const records = res.data.data?.records || [];
+          const userRecord = records.find((r) => r.studentId === studentId);
+          if (userRecord) {
+            statuses[session.id] = userRecord.status;
+          } else {
+            statuses[session.id] = null;
+          }
+        } catch (err) {
+          console.error(`Failed to check session ${session.id}:`, err);
+          statuses[session.id] = null;
+        }
+      }
+      return statuses;
+    },
+    enabled: !!studentId && enrolledSessions.length > 0,
+  });
+
   // Categorize sessions
   const now = new Date();
   const activeSessionsList = enrolledSessions.filter((s) => {
@@ -404,9 +463,14 @@ export default function AttendancePage() {
   // Statistics
   const totalSessions = enrolledSessions.length;
   const activeSessions = activeSessionsList.length;
-  const totalMarked = markedSessions.length;
+  const totalMarked = Object.values(attendanceStatuses || {}).filter(
+    (s) => s !== null,
+  ).length;
+  const totalPresent = Object.values(attendanceStatuses || {}).filter(
+    (s) => s === "PRESENT",
+  ).length;
   const attendanceRate =
-    totalSessions > 0 ? (totalMarked / totalSessions) * 100 : 0;
+    totalSessions > 0 ? (totalPresent / totalSessions) * 100 : 0;
 
   const markAttendance = async (sessionId) => {
     if (!isValidStudentId) {
@@ -446,7 +510,6 @@ export default function AttendancePage() {
       });
 
       const result = res.data.data;
-      setMarkedSessions((prev) => [...prev, sessionId]);
 
       if (result.status === "PRESENT") {
         toast.success(
@@ -458,7 +521,9 @@ export default function AttendancePage() {
         );
       }
 
+      // Refetch all data
       refetchSessions();
+      refetchAttendance();
     } catch (err) {
       if (err.code === 1 || err.code === "PERMISSION_DENIED") {
         toast.error("Location access denied. Please allow location access.");
@@ -476,6 +541,7 @@ export default function AttendancePage() {
   };
 
   const isLoading = studentLoading || sessionsLoading;
+
   const hasEnrolledCourses = enrolledCourseIds.length > 0;
 
   if (!isValidStudentId && !isLoading) {
@@ -544,14 +610,14 @@ export default function AttendancePage() {
               trend="Mark now!"
             />
             <StatsCard
-              title="Marked Complete"
+              title="Marked"
               value={totalMarked}
               icon={CheckCircle2}
               gradient="from-purple-500 to-purple-600"
               delay={2}
             />
             <StatsCard
-              title="Attendance Rate"
+              title="Present Rate"
               value={`${Math.round(attendanceRate)}%`}
               icon={TrendingUp}
               gradient="from-orange-500 to-orange-600"
@@ -612,7 +678,9 @@ export default function AttendancePage() {
                       session={session}
                       onMark={markAttendance}
                       marking={marking}
-                      alreadyMarked={markedSessions.includes(session.id)}
+                      attendanceStatus={
+                        attendanceStatuses?.[session.id] || null
+                      }
                     />
                   ))}
                 </div>
@@ -640,7 +708,9 @@ export default function AttendancePage() {
                       session={session}
                       onMark={markAttendance}
                       marking={marking}
-                      alreadyMarked={markedSessions.includes(session.id)}
+                      attendanceStatus={
+                        attendanceStatuses?.[session.id] || null
+                      }
                     />
                   ))}
                 </div>
@@ -668,7 +738,9 @@ export default function AttendancePage() {
                       session={session}
                       onMark={markAttendance}
                       marking={marking}
-                      alreadyMarked={markedSessions.includes(session.id)}
+                      attendanceStatus={
+                        attendanceStatuses?.[session.id] || null
+                      }
                     />
                   ))}
                 </div>
@@ -705,7 +777,7 @@ export default function AttendancePage() {
           </Card>
         )}
 
-        {/* No Sessions State (has courses but no sessions) */}
+        {/* No Sessions State */}
         {!isLoading && hasEnrolledCourses && totalSessions === 0 && (
           <Card className="text-center py-16 bg-white dark:bg-gray-900">
             <CardContent>
