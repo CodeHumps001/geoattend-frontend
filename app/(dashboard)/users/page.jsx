@@ -129,7 +129,8 @@ function UserCard({ user, index, onEnroll, onViewDetails }) {
       .slice(0, 2) || "U";
 
   const courseCount = user.student?.enrollments?.length || 0;
-  const attendanceRate = user.student?.attendanceRate || 85;
+
+  const attendanceRate = user.student?.attendanceRate || 0;
 
   return (
     <motion.div

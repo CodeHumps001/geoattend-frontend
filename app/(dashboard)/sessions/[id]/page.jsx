@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -44,13 +45,11 @@ const fadeUp = {
   }),
 };
 
-// Export to CSV function
-const exportToCSV = (records, sessionName) => {
-  if (!records || records.length === 0) {
+const exportToCSV = (records, label) => {
+  if (!records?.length) {
     toast.error("No records to export");
     return;
   }
-
   const headers = [
     "Student Name",
     "Student Code",
@@ -60,66 +59,72 @@ const exportToCSV = (records, sessionName) => {
     "Latitude",
     "Longitude",
   ];
-
-  const rows = records.map((record) => [
-    record.student?.user?.name || "N/A",
-    record.student?.studentCode || "N/A",
-    record.student?.user?.email || "N/A",
-    record.status || "N/A",
-    record.markedAt ? new Date(record.markedAt).toLocaleString() : "N/A",
-    record.latitude?.toFixed(6) || "N/A",
-    record.longitude?.toFixed(6) || "N/A",
+  const rows = records.map((r) => [
+    r.student?.user?.name || "N/A",
+    r.student?.studentCode || "N/A",
+    r.student?.user?.email || "N/A",
+    r.status || "N/A",
+    r.markedAt ? new Date(r.markedAt).toLocaleString() : "N/A",
+    r.latitude?.toFixed(6) || "N/A",
+    r.longitude?.toFixed(6) || "N/A",
   ]);
-
-  const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv" });
+  const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `attendance_${sessionName}_${new Date().toISOString().split("T")[0]}.csv`;
+  a.download = `attendance_${label}_${new Date().toISOString().split("T")[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  toast.success("Attendance report exported successfully!");
+  toast.success("Attendance exported!");
 };
 
-// Desktop Table Row Component
-function DesktopAttendanceRow({ record }) {
+function MobileAttendanceCard({ record, index }) {
   const isPresent = record?.status === "PRESENT";
+  const user = record?.student?.user;
   const student = record?.student;
-  const user = student?.user;
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "S";
 
   return (
-    <TableRow className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-      <TableCell className="font-medium">
+    <motion.div
+      variants={fadeUp}
+      custom={index}
+      initial="hidden"
+      animate="visible"
+      className={`rounded-2xl border-2 p-4 transition-all ${
+        isPresent
+          ? "border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20"
+          : "border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/20"
+      }`}
+    >
+      <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <Avatar className="w-8 h-8">
+          <Avatar className="w-10 h-10 flex-shrink-0">
             <AvatarFallback
-              className={`text-xs font-bold ${
+              className={`font-bold text-xs ${
                 isPresent
                   ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                   : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
               }`}
             >
-              {user?.name?.charAt(0) || "S"}
+              {initials}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {user?.name || "N/A"}
+            <p className="font-bold text-gray-900 dark:text-white text-sm">
+              {user?.name}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {student?.studentCode || "N/A"}
+              {student?.studentCode}
             </p>
           </div>
         </div>
-      </TableCell>
-      <TableCell className="text-gray-600 dark:text-gray-300">
-        {student?.studentCode || "N/A"}
-      </TableCell>
-      <TableCell className="text-sm text-gray-600 dark:text-gray-300">
-        {user?.email || "N/A"}
-      </TableCell>
-      <TableCell>
         <Badge
           className={`text-xs font-bold border-0 ${
             isPresent
@@ -139,110 +144,27 @@ function DesktopAttendanceRow({ record }) {
             </span>
           )}
         </Badge>
-      </TableCell>
-      <TableCell className="text-sm whitespace-nowrap text-gray-600 dark:text-gray-300">
-        {record?.markedAt
-          ? new Date(record.markedAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "N/A"}
-      </TableCell>
-      <TableCell className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-        {record?.latitude
-          ? `${record.latitude.toFixed(4)}, ${record.longitude?.toFixed(4)}`
-          : "N/A"}
-      </TableCell>
-    </TableRow>
-  );
-}
-
-// Mobile Card Component for Attendance
-function MobileAttendanceCard({ record, index }) {
-  const isPresent = record?.status === "PRESENT";
-  const student = record?.student;
-  const user = student?.user;
-  const initials =
-    user?.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "S";
-
-  return (
-    <motion.div
-      variants={fadeUp}
-      custom={index}
-      initial="hidden"
-      animate="visible"
-      className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10 flex-shrink-0">
-            <AvatarFallback
-              className={`font-bold text-xs ${
-                isPresent
-                  ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                  : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-              }`}
-            >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-semibold text-gray-900 dark:text-white text-sm">
-              {user?.name || "N/A"}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {student?.studentCode || "N/A"}
-            </p>
-          </div>
-        </div>
-        <Badge
-          className={`text-xs font-bold border-0 ${
-            isPresent
-              ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-              : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-          }`}
-        >
-          {isPresent ? "PRESENT" : "ABSENT"}
-        </Badge>
       </div>
 
-      <Separator className="my-2 bg-gray-200 dark:bg-gray-700" />
-
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-gray-500 dark:text-gray-400 text-xs">
-            Email
-          </span>
-          <span className="text-gray-700 dark:text-gray-300 text-xs font-mono truncate max-w-[180px]">
-            {user?.email || "N/A"}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-gray-500 dark:text-gray-400 text-xs">
-            Marked At
-          </span>
-          <span className="text-gray-700 dark:text-gray-300 text-xs">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <p className="text-gray-400 dark:text-gray-500">Marked at</p>
+          <p className="text-gray-700 dark:text-gray-300 font-medium">
             {record?.markedAt
               ? new Date(record.markedAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
+                  second: "2-digit",
                 })
-              : "N/A"}
-          </span>
+              : "—"}
+          </p>
         </div>
         {record?.latitude && (
-          <div className="flex items-center justify-between">
-            <span className="text-gray-500 dark:text-gray-400 text-xs">
-              Location
-            </span>
-            <span className="text-gray-700 dark:text-gray-300 text-xs font-mono">
+          <div>
+            <p className="text-gray-400 dark:text-gray-500">Location</p>
+            <p className="text-gray-700 dark:text-gray-300 font-mono">
               {record.latitude.toFixed(4)}, {record.longitude?.toFixed(4)}
-            </span>
+            </p>
           </div>
         )}
       </div>
@@ -253,21 +175,10 @@ function MobileAttendanceCard({ record, index }) {
 export default function SessionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [exporting, setExporting] = useState(false);
 
-  // Fetch session details first
-  const { data: sessionData, isLoading: sessionLoading } = useQuery({
-    queryKey: ["session-info", id],
-    queryFn: async () => {
-      const res = await api.get(`/api/v1/attendance/session/${id}`);
-      return res.data.data;
-    },
-    enabled: !!id,
-  });
-
-  // Fetch attendance records
-  const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
-    queryKey: ["session-attendance", id],
+  // Single API call — returns both session and records
+  const { data, isLoading } = useQuery({
+    queryKey: ["session-detail", id],
     queryFn: async () => {
       const res = await api.get(`/api/v1/attendance/session/${id}`);
       return res.data.data;
@@ -276,47 +187,30 @@ export default function SessionDetailPage() {
     refetchInterval: 15000,
   });
 
-  const records = attendanceData?.records || [];
-  const sessionInfo = sessionData?.session || attendanceData?.session;
+  const records = data?.records || [];
+  const session = data?.session;
 
-  // Calculate stats
   const presentCount = records.filter((r) => r?.status === "PRESENT").length;
   const absentCount = records.filter((r) => r?.status === "ABSENT").length;
-  const totalStudents = records.length;
   const attendanceRate =
-    totalStudents > 0 ? ((presentCount / totalStudents) * 100).toFixed(1) : "0";
+    records.length > 0
+      ? ((presentCount / records.length) * 100).toFixed(1)
+      : "0";
 
-  // Session details from the session object
-  const courseName = sessionInfo?.course?.name || "Session Details";
-  const courseCode = sessionInfo?.course?.code || "";
-  const department = sessionInfo?.course?.department || "";
-  const sessionDate = sessionInfo?.date ? new Date(sessionInfo.date) : null;
-  const startTime = sessionInfo?.startTime
-    ? new Date(sessionInfo.startTime)
-    : null;
-  const endTime = sessionInfo?.endTime ? new Date(sessionInfo.endTime) : null;
-  const radius = sessionInfo?.radiusMeters || 100;
-  const isActive = endTime ? new Date() < endTime : false;
+  const now = new Date();
+  const isLive = session
+    ? now >= new Date(session.startTime) && now <= new Date(session.endTime)
+    : false;
 
-  const handleExport = () => {
-    if (records.length === 0) {
-      toast.error("No attendance records to export");
-      return;
-    }
-    setExporting(true);
-    exportToCSV(records, `${courseCode || "session"}_${id}`);
-    setExporting(false);
-  };
-
-  const isLoading = sessionLoading || attendanceLoading;
+  const courseLabel = `${session?.course?.code || "session"}_${id}`;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-3" />
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Loading session details...
+            Loading session...
           </p>
         </div>
       </div>
@@ -326,20 +220,20 @@ export default function SessionDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-8 pb-6 sticky top-0 z-40">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-10 sm:pt-12 pb-4 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">
           <button
             onClick={() => router.push("/sessions")}
-            className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
+            className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-3"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back to Sessions</span>
           </button>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                {isActive ? (
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                {isLive ? (
                   <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-0 font-bold">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse inline-block" />
                     LIVE SESSION
@@ -348,188 +242,184 @@ export default function SessionDetailPage() {
                   <Badge variant="secondary">COMPLETED</Badge>
                 )}
               </div>
-              <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                {courseName}
+              <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
+                {session?.course?.name || "Session Details"}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                {courseCode} • {department}
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+                {session?.course?.code}
+                {session?.course?.department &&
+                  ` · ${session.course.department}`}
               </p>
             </div>
-
             {records.length > 0 && (
               <Button
-                onClick={handleExport}
-                disabled={exporting}
+                onClick={() => exportToCSV(records, courseLabel)}
                 variant="outline"
-                className="gap-2 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700"
+                size="sm"
+                className="gap-2 border-gray-200 dark:border-gray-700 self-start sm:self-auto"
               >
                 <Download className="w-4 h-4" />
-                {exporting ? "Exporting..." : "Export CSV"}
+                Export CSV
               </Button>
             )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Session Info Card */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-5 sm:space-y-6">
+        {/* Session Info */}
         <motion.div
           variants={fadeUp}
           custom={0}
           initial="hidden"
           animate="visible"
-          className="mb-6"
         >
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-white to-gray-50 dark:from-gray-900 dark:to-gray-800/50">
-            <CardContent className="p-6">
+          <Card className="border-0 shadow-lg bg-white dark:bg-gray-900">
+            <CardContent className="p-5 sm:p-6">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      Date
-                    </p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {sessionDate
-                        ? sessionDate.toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      Time
-                    </p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {startTime && endTime
-                        ? `${startTime.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })} — ${endTime.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}`
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      GPS Radius
-                    </p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {radius} meters
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                    <UserCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      Recorded
-                    </p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {totalStudents} students
-                    </p>
-                  </div>
-                </div>
+                {[
+                  {
+                    icon: Calendar,
+                    label: "Date",
+                    value: session?.date
+                      ? new Date(session.date).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "—",
+                    color: "blue",
+                  },
+                  {
+                    icon: Clock,
+                    label: "Time",
+                    value:
+                      session?.startTime && session?.endTime
+                        ? `${new Date(session.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — ${new Date(session.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                        : "—",
+                    color: "orange",
+                  },
+                  {
+                    icon: MapPin,
+                    label: "GPS Radius",
+                    value: session?.radiusMeters
+                      ? `${session.radiusMeters} metres`
+                      : "—",
+                    color: "emerald",
+                  },
+                  {
+                    icon: UserCheck,
+                    label: "Recorded",
+                    value: `${records.length} students`,
+                    color: "violet",
+                  },
+                ].map(({ icon: Icon, label, value, color }) => {
+                  const colorMap = {
+                    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
+                    orange:
+                      "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400",
+                    emerald:
+                      "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400",
+                    violet:
+                      "bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400",
+                  };
+                  return (
+                    <div key={label} className="flex items-center gap-3">
+                      <div
+                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${colorMap[color]}`}
+                      >
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {label}
+                        </p>
+                        <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                          {value}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
             {
-              label: "Total Recorded",
-              value: totalStudents,
-              icon: Users,
+              label: "Total",
+              value: records.length,
               gradient: "from-blue-500 to-blue-600",
+              icon: Users,
               delay: 1,
             },
             {
               label: "Present",
               value: presentCount,
-              icon: CheckCircle2,
               gradient: "from-emerald-500 to-emerald-600",
+              icon: CheckCircle2,
               delay: 2,
             },
             {
               label: "Absent",
               value: absentCount,
-              icon: XCircle,
               gradient: "from-red-500 to-red-600",
+              icon: XCircle,
               delay: 3,
             },
             {
-              label: "Attendance Rate",
+              label: "Rate",
               value: `${attendanceRate}%`,
+              gradient: "from-violet-500 to-violet-600",
               icon: TrendingUp,
-              gradient: "from-purple-500 to-purple-600",
               delay: 4,
             },
-          ].map((stat) => (
-            <motion.div
-              key={stat.label}
-              variants={fadeUp}
-              custom={stat.delay}
-              initial="hidden"
-              animate="visible"
-            >
-              <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-900">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {stat.label}
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                        {stat.value}
-                      </p>
+          ].map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={stat.label}
+                variants={fadeUp}
+                custom={stat.delay}
+                initial="hidden"
+                animate="visible"
+              >
+                <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:shadow-md transition-all">
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {stat.label}
+                        </p>
+                        <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-0.5">
+                          {stat.value}
+                        </p>
+                      </div>
+                      <div
+                        className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md`}
+                      >
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      </div>
                     </div>
-                    <div
-                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}
-                    >
-                      <stat.icon className="w-5 h-5 text-white" />
-                    </div>
-                  </div>
-                  {stat.label === "Attendance Rate" && totalStudents > 0 && (
-                    <div className="mt-3">
-                      <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    {stat.label === "Rate" && records.length > 0 && (
+                      <div className="mt-2 w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full"
                           style={{ width: `${attendanceRate}%` }}
                         />
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* Attendance Records Section */}
+        {/* Attendance Records */}
         <motion.div
           variants={fadeUp}
           custom={5}
@@ -537,68 +427,140 @@ export default function SessionDetailPage() {
           animate="visible"
         >
           <Card className="border-0 shadow-lg bg-white dark:bg-gray-900">
-            <CardHeader>
-              <div>
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                   Attendance Records
+                  <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                    ({records.length})
+                  </span>
                 </CardTitle>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {totalStudents} student{totalStudents !== 1 ? "s" : ""}{" "}
-                  recorded attendance
-                </p>
+                {isLive && (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    Live updating
+                  </div>
+                )}
               </div>
             </CardHeader>
-
-            <CardContent>
+            <CardContent className="pt-0">
               {records.length === 0 ? (
-                <div className="py-16 text-center">
-                  <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">
+                <div className="py-14 text-center">
+                  <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Users className="w-7 h-7 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 font-semibold">
                     No attendance records yet
                   </p>
-                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-                    Students will appear here when they mark attendance
-                  </p>
+                  {isLive && (
+                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+                      Students will appear here as they mark in · auto-refreshes
+                      every 15s
+                    </p>
+                  )}
                 </div>
               ) : (
                 <>
-                  {/* Desktop Table View */}
+                  {/* Desktop Table */}
                   <div className="hidden md:block overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50 dark:bg-gray-800/50">
-                          <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                            Student
-                          </TableHead>
-                          <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                            Student Code
-                          </TableHead>
-                          <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                            Email
-                          </TableHead>
-                          <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                            Status
-                          </TableHead>
-                          <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                            Time
-                          </TableHead>
-                          <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                            Location
-                          </TableHead>
+                          {[
+                            "Student",
+                            "Code",
+                            "Email",
+                            "Status",
+                            "Time",
+                            "GPS Location",
+                          ].map((h) => (
+                            <TableHead
+                              key={h}
+                              className="font-semibold text-gray-700 dark:text-gray-300 text-xs"
+                            >
+                              {h}
+                            </TableHead>
+                          ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {records.map((record) => (
-                          <DesktopAttendanceRow
-                            key={record.id}
-                            record={record}
-                          />
-                        ))}
+                        {records.map((record) => {
+                          const isPresent = record?.status === "PRESENT";
+                          const user = record?.student?.user;
+                          const student = record?.student;
+                          const initials =
+                            user?.name
+                              ?.split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 2) || "S";
+                          return (
+                            <TableRow
+                              key={record.id}
+                              className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                            >
+                              <TableCell>
+                                <div className="flex items-center gap-2.5">
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarFallback
+                                      className={`text-xs font-bold ${isPresent ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"}`}
+                                    >
+                                      {initials}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                                    {user?.name}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs font-mono text-gray-600 dark:text-gray-300">
+                                {student?.studentCode}
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-500 dark:text-gray-400">
+                                {user?.email}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`text-xs font-bold border-0 ${isPresent ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"}`}
+                                >
+                                  {isPresent ? (
+                                    <>
+                                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                                      PRESENT
+                                    </>
+                                  ) : (
+                                    <>
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      ABSENT
+                                    </>
+                                  )}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                {record?.markedAt
+                                  ? new Date(
+                                      record.markedAt,
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      second: "2-digit",
+                                    })
+                                  : "—"}
+                              </TableCell>
+                              <TableCell className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                                {record?.latitude
+                                  ? `${record.latitude.toFixed(4)}, ${record.longitude?.toFixed(4)}`
+                                  : "—"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
 
-                  {/* Mobile Card View */}
+                  {/* Mobile Cards */}
                   <div className="md:hidden space-y-3">
                     {records.map((record, i) => (
                       <MobileAttendanceCard
@@ -614,31 +576,27 @@ export default function SessionDetailPage() {
           </Card>
         </motion.div>
 
-        {/* Achievement / Summary Card */}
-        {totalStudents > 0 && parseFloat(attendanceRate) >= 80 && (
+        {/* Achievement card */}
+        {records.length > 0 && parseFloat(attendanceRate) >= 75 && (
           <motion.div
             variants={fadeUp}
             custom={6}
             initial="hidden"
             animate="visible"
-            className="mt-6"
           >
             <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-none shadow-md">
-              <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                    <Award className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold text-gray-900 dark:text-white">
-                      Great Attendance! 🎉
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      {attendanceRate}% attendance rate for this session.
-                      {presentCount} out of {totalStudents} students were
-                      present.
-                    </p>
-                  </div>
+              <CardContent className="p-4 sm:p-5 flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                  <Award className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-white">
+                    Great Session Attendance! 🎉
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+                    {attendanceRate}% attendance — {presentCount} of{" "}
+                    {records.length} students were present.
+                  </p>
                 </div>
               </CardContent>
             </Card>

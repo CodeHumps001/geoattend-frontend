@@ -212,7 +212,15 @@ export default function CoursesPage() {
   // Filter courses based on role
   const visibleCourses = allCourses.filter((course) => {
     if (isLecturer) return course.lecturer?.user?.email === user?.email;
-    return true;
+    if (isStudent) {
+      // Only show courses the student is enrolled in
+      return course.enrollments?.some(
+        (e) =>
+          e.student?.user?.email === user?.email ||
+          e.student?.userId === user?.id,
+      );
+    }
+    return true; // admin sees all
   });
 
   // Get unique departments for filter

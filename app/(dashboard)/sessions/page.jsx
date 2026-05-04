@@ -20,9 +20,8 @@ import {
   Calendar,
   Navigation,
   ChevronRight,
-  LayoutGrid,
-  Table as TableIcon,
   TrendingUp,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,41 +34,26 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
-// Session Card Component - Optimized for grid layout
 function SessionCard({ session, index }) {
   const router = useRouter();
   const now = new Date();
-  const isActive = now < new Date(session.endTime);
   const isLive =
     now >= new Date(session.startTime) && now <= new Date(session.endTime);
+  const isEnded = now > new Date(session.endTime);
 
-  const { data: attendanceData } = useQuery({
-    queryKey: ["session-attendance-preview", session.id],
-    queryFn: async () => {
-      const res = await api.get(`/api/v1/attendance/session/${session.id}`);
-      return res.data.data;
-    },
-  });
-
-  const records = attendanceData?.records || [];
+  // Use attendance data already included in the session from getAllSessions
+  const records = session.attendance || [];
   const presentCount = records.filter((r) => r.status === "PRESENT").length;
   const attendanceRate =
     records.length > 0 ? ((presentCount / records.length) * 100).toFixed(0) : 0;
@@ -80,65 +64,65 @@ function SessionCard({ session, index }) {
       custom={index}
       initial="hidden"
       animate="visible"
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -3 }}
       className="h-full"
     >
       <Card
-        className={`h-full border-2 transition-all duration-300 hover:shadow-xl cursor-pointer overflow-hidden group ${
+        className={`h-full border-2 transition-all duration-300 hover:shadow-xl cursor-pointer overflow-hidden group relative ${
           isLive
-            ? "border-emerald-200 dark:border-emerald-800 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/30 bg-gradient-to-br from-white dark:from-gray-900 to-emerald-50/30 dark:to-emerald-950/20"
+            ? "border-emerald-200 dark:border-emerald-800 shadow-lg shadow-emerald-50 dark:shadow-emerald-950/30"
             : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-        }`}
+        } bg-white dark:bg-gray-900`}
         onClick={() => router.push(`/sessions/${session.id}`)}
       >
-        {/* Live Indicator Bar */}
         {isLive && (
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-emerald-600 animate-pulse" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
         )}
 
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 pt-5">
           <div className="flex items-start justify-between">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {isLive ? (
                   <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-0 text-xs font-bold">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse inline-block" />
-                    LIVE NOW
+                    LIVE
                   </Badge>
-                ) : isActive ? (
-                  <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-0 text-xs">
-                    Active
-                  </Badge>
-                ) : (
+                ) : isEnded ? (
                   <Badge variant="secondary" className="text-xs">
                     Completed
                   </Badge>
+                ) : (
+                  <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-0 text-xs">
+                    Upcoming
+                  </Badge>
                 )}
               </div>
-              <CardTitle className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1">
-                {session.course?.name}
+              <CardTitle className="text-base font-bold text-gray-900 dark:text-white line-clamp-1">
+                {session.course?.name || "Unknown Course"}
               </CardTitle>
-              <CardDescription className="text-xs mt-1 flex items-center gap-2 text-gray-500 dark:text-gray-400">
+              <CardDescription className="text-xs mt-0.5">
                 <span className="font-mono">{session.course?.code}</span>
-                <span>•</span>
-                <span>{session.course?.department}</span>
+                {session.course?.department && (
+                  <span> · {session.course.department}</span>
+                )}
               </CardDescription>
             </div>
-            <div className="text-right">
+            <div className="text-right flex-shrink-0 ml-2">
               <p className="text-2xl font-black text-gray-900 dark:text-white">
                 {presentCount}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
                 present
               </p>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0 pb-4">
-          <div className="space-y-2 mb-3">
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-              <Clock className="w-3.5 h-3.5" />
+        <CardContent className="pt-0">
+          <div className="space-y-1.5 mb-3">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <Clock className="w-3.5 h-3.5 flex-shrink-0" />
               <span>
                 {new Date(session.startTime).toLocaleTimeString([], {
                   hour: "2-digit",
@@ -151,132 +135,54 @@ function SessionCard({ session, index }) {
                 })}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{session.radiusMeters}m radius</span>
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>
+                {new Date(session.date).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{new Date(session.date).toLocaleDateString()}</span>
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{session.radiusMeters}m GPS radius</span>
             </div>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+          <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  <span>{records.length} students</span>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                  <span>{presentCount} present</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-gray-500 dark:text-gray-500" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  {attendanceRate}%
+                  {records.length} recorded
+                </span>
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="w-3 h-3" />
+                  {presentCount}
                 </span>
               </div>
+              <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                {attendanceRate}%
+              </span>
             </div>
             <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-700"
                 style={{ width: `${attendanceRate}%` }}
               />
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-end">
+          <div className="mt-3 flex items-center justify-end">
             <span className="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:gap-2 transition-all">
-              View Details
-              <ChevronRight className="w-3.5 h-3.5" />
+              View Details <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>
         </CardContent>
       </Card>
     </motion.div>
-  );
-}
-
-// Session Row Component (Desktop Table View)
-function SessionRow({ session }) {
-  const router = useRouter();
-  const now = new Date();
-  const isLive =
-    now >= new Date(session.startTime) && now <= new Date(session.endTime);
-
-  const { data: attendanceData } = useQuery({
-    queryKey: ["session-attendance-count", session.id],
-    queryFn: async () => {
-      const res = await api.get(`/api/v1/attendance/session/${session.id}`);
-      return res.data.data;
-    },
-  });
-
-  const records = attendanceData?.records || [];
-  const presentCount = records.filter((r) => r.status === "PRESENT").length;
-  const attendanceRate =
-    records.length > 0 ? ((presentCount / records.length) * 100).toFixed(0) : 0;
-
-  return (
-    <TableRow
-      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
-      onClick={() => router.push(`/sessions/${session.id}`)}
-    >
-      <TableCell className="font-medium">
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white">
-            {session.course?.name}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {session.course?.code}
-          </p>
-        </div>
-      </TableCell>
-      <TableCell>
-        {isLive ? (
-          <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-0">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse inline-block" />
-            LIVE
-          </Badge>
-        ) : (
-          <Badge variant="outline">Ended</Badge>
-        )}
-      </TableCell>
-      <TableCell className="text-sm whitespace-nowrap text-gray-600 dark:text-gray-300">
-        {new Date(session.startTime).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
-          <MapPin className="w-3 h-3" />
-          {session.radiusMeters}m
-        </div>
-      </TableCell>
-      <TableCell className="text-center">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {presentCount}
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            / {records.length}
-          </span>
-          <div className="w-12 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full"
-              style={{ width: `${attendanceRate}%` }}
-            />
-          </div>
-        </div>
-      </TableCell>
-      <TableCell className="text-right">
-        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:translate-x-1 transition-transform" />
-      </TableCell>
-    </TableRow>
   );
 }
 
@@ -286,7 +192,6 @@ export default function SessionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  const [viewMode, setViewMode] = useState("cards");
   const [form, setForm] = useState({
     courseId: "",
     startTime: "",
@@ -296,14 +201,16 @@ export default function SessionsPage() {
     radiusMeters: "100",
   });
 
+  // Get lecturer's courses for the dropdown
   const { data: coursesData } = useQuery({
-    queryKey: ["lecturer-courses"],
+    queryKey: ["my-courses-for-session"],
     queryFn: async () => {
       const res = await api.get("/api/v1/courses");
       return res.data.data;
     },
   });
 
+  // Get all sessions — attendance is already included from backend
   const {
     data: sessionsData,
     isLoading,
@@ -317,14 +224,36 @@ export default function SessionsPage() {
     refetchInterval: 15000,
   });
 
+  // Filter sessions for lecturer — only show their courses' sessions
+  const allSessions = sessionsData?.sessions || [];
+  const myCourseIds = new Set(
+    (coursesData?.courses || [])
+      .filter((c) => c.lecturer?.user?.email === user?.email)
+      .map((c) => c.id),
+  );
+
+  // Admins see all, lecturers see only their course sessions
+  const sessions =
+    user?.role === "ADMIN"
+      ? allSessions
+      : allSessions.filter((s) => myCourseIds.has(s.courseId));
+
   const myCourses = (coursesData?.courses || []).filter(
     (c) => c.lecturer?.user?.email === user?.email,
   );
 
-  const sessions = sessionsData?.sessions || [];
+  const now = new Date();
+  const liveSessions = sessions.filter(
+    (s) => now >= new Date(s.startTime) && now <= new Date(s.endTime),
+  ).length;
 
   const getLocation = () => {
     setGettingLocation(true);
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      setGettingLocation(false);
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm((prev) => ({
@@ -332,14 +261,16 @@ export default function SessionsPage() {
           latitude: pos.coords.latitude.toString(),
           longitude: pos.coords.longitude.toString(),
         }));
-        toast.success("Location captured!");
+        toast.success(
+          `Location captured! (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`,
+        );
         setGettingLocation(false);
       },
-      () => {
+      (err) => {
         toast.error("Could not get location. Please allow location access.");
         setGettingLocation(false);
       },
-      { enableHighAccuracy: true },
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   };
 
@@ -377,141 +308,68 @@ export default function SessionsPage() {
     }
   };
 
-  const totalSessions = sessions.length;
-  const activeSessions = sessions.filter((s) => {
-    const now = new Date();
-    return now >= new Date(s.startTime) && now <= new Date(s.endTime);
-  }).length;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-8 pb-6 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                Sessions
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-                {totalSessions} total sessions • {activeSessions} active now
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("cards")}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                    viewMode === "cards"
-                      ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  Cards
-                </button>
-                <button
-                  onClick={() => setViewMode("table")}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                    viewMode === "table"
-                      ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <TableIcon className="w-3.5 h-3.5" />
-                  Table
-                </button>
-              </div>
-              <Button
-                onClick={() => setShowModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-md shadow-blue-200 dark:shadow-blue-900/30"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Session
-              </Button>
-            </div>
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-10 sm:pt-12 pb-4 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
+              Sessions
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-0.5">
+              {sessions.length} total
+              {liveSessions > 0 && (
+                <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+                  · {liveSessions} live now
+                </span>
+              )}
+            </p>
           </div>
+          <Button
+            onClick={() => setShowModal(true)}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-md shadow-blue-200 dark:shadow-blue-900/30 w-full sm:w-auto"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Session
+          </Button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {viewMode === "table" && !isLoading && sessions.length > 0 && (
-          <Card className="hidden sm:block border-0 shadow-lg bg-white dark:bg-gray-900">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50 dark:bg-gray-800/50">
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                      Course
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                      Status
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                      Time
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-300">
-                      Radius
-                    </TableHead>
-                    <TableHead className="font-semibold text-center text-gray-700 dark:text-gray-300">
-                      Attendance
-                    </TableHead>
-                    <TableHead className="text-right"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.map((session) => (
-                    <SessionRow key={session.id} session={session} />
-                  ))}
-                </TableBody>
-              </Table>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-56 rounded-2xl" />
+            ))}
+          </div>
+        ) : sessions.length === 0 ? (
+          <Card className="text-center py-16 border-0 shadow-lg bg-white dark:bg-gray-900">
+            <CardContent>
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <PlayCircle className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">
+                No sessions yet
+              </p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+                Start a session to begin tracking attendance
+              </p>
+              <Button
+                onClick={() => setShowModal(true)}
+                className="mt-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Start First Session
+              </Button>
             </CardContent>
           </Card>
-        )}
-
-        {(viewMode === "cards" ||
-          (typeof window !== "undefined" && window.innerWidth < 640)) && (
-          <>
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Card
-                    key={i}
-                    className="animate-pulse bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                  >
-                    <CardContent className="p-5">
-                      <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : sessions.length === 0 ? (
-              <Card className="text-center py-16 border-0 shadow-lg bg-white dark:bg-gray-900">
-                <CardContent>
-                  <PlayCircle className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400 font-semibold text-xl">
-                    No sessions yet
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
-                    Start your first session to track attendance
-                  </p>
-                  <Button
-                    onClick={() => setShowModal(true)}
-                    className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Start Session
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {sessions.map((session, i) => (
-                  <SessionCard key={session.id} session={session} index={i} />
-                ))}
-              </div>
-            )}
-          </>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+            {sessions.map((session, i) => (
+              <SessionCard key={session.id} session={session} index={i} />
+            ))}
+          </div>
         )}
       </div>
 
@@ -529,7 +387,8 @@ export default function SessionsPage() {
               initial={{ opacity: 0, y: 60 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 60 }}
-              className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
+              transition={{ type: "spring", bounce: 0.2 }}
+              className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -537,7 +396,7 @@ export default function SessionsPage() {
                     Start Session
                   </h2>
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    Capture your location to begin
+                    Capture your classroom location first
                   </p>
                 </div>
                 <button
@@ -550,7 +409,7 @@ export default function SessionsPage() {
 
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
+                  <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
                     Course
                   </Label>
                   <select
@@ -559,9 +418,9 @@ export default function SessionsPage() {
                       setForm({ ...form, courseId: e.target.value })
                     }
                     required
-                    className="w-full mt-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-1 focus:ring-blue-400 dark:focus:ring-blue-500 transition-colors"
+                    className="w-full mt-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
                   >
-                    <option value="">Select a course</option>
+                    <option value="">Select a course...</option>
                     {myCourses.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.code} — {c.name}
@@ -570,38 +429,39 @@ export default function SessionsPage() {
                   </select>
                 </div>
 
-                <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
-                    Start Time
-                  </Label>
-                  <Input
-                    type="datetime-local"
-                    value={form.startTime}
-                    onChange={(e) =>
-                      setForm({ ...form, startTime: e.target.value })
-                    }
-                    required
-                    className="mt-1.5 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
+                      Start Time
+                    </Label>
+                    <Input
+                      type="datetime-local"
+                      value={form.startTime}
+                      onChange={(e) =>
+                        setForm({ ...form, startTime: e.target.value })
+                      }
+                      required
+                      className="mt-1.5 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
+                      End Time
+                    </Label>
+                    <Input
+                      type="datetime-local"
+                      value={form.endTime}
+                      onChange={(e) =>
+                        setForm({ ...form, endTime: e.target.value })
+                      }
+                      required
+                      className="mt-1.5 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
-                    End Time
-                  </Label>
-                  <Input
-                    type="datetime-local"
-                    value={form.endTime}
-                    onChange={(e) =>
-                      setForm({ ...form, endTime: e.target.value })
-                    }
-                    required
-                    className="mt-1.5 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
+                  <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
                     Allowed Radius (metres)
                   </Label>
                   <Input
@@ -612,30 +472,31 @@ export default function SessionsPage() {
                     }
                     min="10"
                     max="500"
-                    className="mt-1.5 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    className="mt-1.5 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 font-semibold">
-                    Classroom Location
+                  <Label className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
+                    Classroom GPS Location
                   </Label>
                   <Button
                     type="button"
                     onClick={getLocation}
                     disabled={gettingLocation}
                     variant="outline"
-                    className="w-full mt-1.5 h-11 rounded-xl border-gray-200 dark:border-gray-700 font-semibold"
+                    className="w-full mt-1.5 h-11 rounded-xl border-gray-200 dark:border-gray-700 font-semibold text-sm"
                   >
                     {gettingLocation ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Getting location...
+                        Getting your location...
                       </span>
                     ) : form.latitude ? (
                       <span className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                         <CheckCircle2 className="w-4 h-4" />
-                        Location captured
+                        {Number(form.latitude).toFixed(4)},{" "}
+                        {Number(form.longitude).toFixed(4)}
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
@@ -644,12 +505,18 @@ export default function SessionsPage() {
                       </span>
                     )}
                   </Button>
+                  {!form.latitude && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1">
+                      ⚠️ Location required — students must be within{" "}
+                      {form.radiusMeters}m of this point
+                    </p>
+                  )}
                 </div>
 
                 <Button
                   type="submit"
-                  disabled={creating}
-                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl mt-2"
+                  disabled={creating || !form.latitude}
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl disabled:opacity-50"
                 >
                   {creating ? (
                     <span className="flex items-center gap-2">
