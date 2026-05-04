@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -166,6 +166,22 @@ export default function CoursesPage() {
     lecturerId: "",
   });
 
+  // First, get the current student ID if user is a student
+  const { data: studentData } = useQuery({
+    queryKey: ["current-student"],
+    queryFn: async () => {
+      if (!isStudent) return null;
+      const res = await api.get("/api/v1/students");
+      const students = res.data.data?.students || [];
+      const currentStudent = students.find(
+        (s) => s.user?.email === user?.email,
+      );
+      return currentStudent;
+    },
+    enabled: isStudent && !!user?.email,
+  });
+
+  // Fetch all courses
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["courses"],
     queryFn: async () => {
@@ -178,14 +194,20 @@ export default function CoursesPage() {
 
   // Filter courses based on role
   const visibleCourses = allCourses.filter((course) => {
-    if (isLecturer) return course.lecturer?.user?.email === user?.email;
-    if (isStudent) {
+    // For lecturers: only courses they teach
+    if (isLecturer) {
+      return course.lecturer?.user?.email === user?.email;
+    }
+
+    // For students: only courses they are enrolled in
+    if (isStudent && studentData) {
+      // Check if student is enrolled in this course
       return course.enrollments?.some(
-        (e) =>
-          e.student?.user?.email === user?.email ||
-          e.student?.userId === user?.id,
+        (enrollment) => enrollment.studentId === studentData.id,
       );
     }
+
+    // For admins: all courses
     return true;
   });
 
@@ -232,7 +254,7 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
-      {/* Header - Clean and simple */}
+      {/* Header */}
       <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-3">
@@ -241,7 +263,11 @@ export default function CoursesPage() {
                 Courses
               </h1>
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
-                {filtered.length} courses available
+                {isStudent
+                  ? "Your enrolled courses"
+                  : isLecturer
+                    ? "Courses you teach"
+                    : `${filtered.length} courses available`}
               </p>
             </div>
             {(isAdmin || isLecturer) && (
@@ -267,22 +293,24 @@ export default function CoursesPage() {
                 className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl text-sm h-10"
               />
             </div>
-            <select
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
-            >
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept === "all" ? "All Departments" : dept}
-                </option>
-              ))}
-            </select>
+            {!isStudent && departments.length > 1 && (
+              <select
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
+              >
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept === "all" ? "All Departments" : dept}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Courses List - Full width */}
+      {/* Courses List */}
       <div className="px-4 py-4">
         {isLoading ? (
           <div className="space-y-3">
@@ -297,17 +325,41 @@ export default function CoursesPage() {
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p className="text-gray-500 dark:text-gray-400 font-semibold">
-              {search || departmentFilter !== "all"
-                ? "No courses found"
-                : "No courses yet"}
+              {isStudent
+                ? "You are not enrolled in any courses yet"
+                : isLecturer
+                  ? "You are not teaching any courses yet"
+                  : search || departmentFilter !== "all"
+                    ? "No courses found"
+                    : "No courses yet"}
             </p>
             <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
-              {search || departmentFilter !== "all"
-                ? "Try adjusting your search"
-                : isAdmin || isLecturer
-                  ? "Create your first course"
-                  : "Ask your admin to enroll you"}
+              {isStudent
+                ? "Ask your admin to enroll you in courses"
+                : isLecturer
+                  ? "Create your first course to get started"
+                  : search || departmentFilter !== "all"
+                    ? "Try adjusting your search"
+                    : "Create your first course"}
             </p>
+            {isStudent && !isLoading && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => router.push("/profile")}
+              >
+                Contact Admin
+              </Button>
+            )}
+            {isLecturer && !isLoading && filtered.length === 0 && (
+              <Button
+                className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Course
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
