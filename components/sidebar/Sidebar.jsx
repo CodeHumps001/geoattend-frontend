@@ -103,15 +103,16 @@ export default function Sidebar() {
           {/* Brand Header */}
           <div className="relative p-5 pb-3 border-b border-gray-200/50 dark:border-white/10">
             <div className="flex items-center gap-3">
-              <motion.div
-                whileHover={{ scale: 1.05, rotate: 5 }}
-                className="relative"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl blur-md opacity-50" />
-                <div className="relative w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="text-white w-5 h-5" />
-                </div>
-              </motion.div>
+              <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+                <Image
+                  src="/logo.jpg"
+                  alt="KlassRep Logo"
+                  width={55}
+                  height={55}
+                  className="object-cover rounded"
+                />
+              </div>
+
               <div>
                 <h1 className="font-black text-xl tracking-tight text-gray-900 dark:text-white leading-tight">
                   KlassRep
