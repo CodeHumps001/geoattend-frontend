@@ -15,11 +15,7 @@ import {
   PlayCircle,
   GraduationCap,
   X,
-  LayoutGrid,
-  List,
   Clock,
-  Award,
-  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,7 +33,7 @@ const fadeUp = {
   }),
 };
 
-// Mobile-optimized Course Card Component
+// Course Card Component
 function CourseCard({ course, role, index }) {
   const router = useRouter();
   const enrolledCount = course.enrollments?.length || 0;
@@ -155,35 +151,6 @@ function CourseCard({ course, role, index }) {
   );
 }
 
-// Stats Card Component (compact for horizontal scroll)
-function StatsCard({ title, value, icon: Icon, gradient, delay }) {
-  return (
-    <motion.div
-      variants={fadeUp}
-      custom={delay}
-      initial="hidden"
-      animate="visible"
-      className="flex-shrink-0 w-[120px]"
-    >
-      <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900">
-        <CardContent className="p-3">
-          <div className="flex flex-col items-center text-center">
-            <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm mb-2`}
-            >
-              <Icon className="w-5 h-5 text-white" />
-            </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
-              {value}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{title}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
 export default function CoursesPage() {
   const { user, isStudent, isLecturer, isAdmin } = useAuth();
   const router = useRouter();
@@ -213,14 +180,13 @@ export default function CoursesPage() {
   const visibleCourses = allCourses.filter((course) => {
     if (isLecturer) return course.lecturer?.user?.email === user?.email;
     if (isStudent) {
-      // Only show courses the student is enrolled in
       return course.enrollments?.some(
         (e) =>
           e.student?.user?.email === user?.email ||
           e.student?.userId === user?.id,
       );
     }
-    return true; // admin sees all
+    return true;
   });
 
   // Get unique departments for filter
@@ -238,18 +204,6 @@ export default function CoursesPage() {
       departmentFilter === "all" || c.department === departmentFilter;
     return matchesSearch && matchesDepartment;
   });
-
-  // Stats
-  const totalCourses = filtered.length;
-  const totalStudents = filtered.reduce(
-    (acc, c) => acc + (c.enrollments?.length || 0),
-    0,
-  );
-  const totalSessions = filtered.reduce(
-    (acc, c) => acc + (c.sessions?.length || 0),
-    0,
-  );
-  const activeCourses = filtered.filter((c) => c.sessions?.length > 0).length;
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -278,7 +232,7 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
-      {/* Header */}
+      {/* Header - Clean and simple */}
       <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-3">
@@ -287,7 +241,7 @@ export default function CoursesPage() {
                 Courses
               </h1>
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
-                {totalCourses} courses available
+                {filtered.length} courses available
               </p>
             </div>
             {(isAdmin || isLecturer) && (
@@ -302,40 +256,6 @@ export default function CoursesPage() {
             )}
           </div>
 
-          {/* Stats Cards - Horizontal scroll (no visible scrollbar) */}
-          <div className="mb-3 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 min-w-min">
-              <StatsCard
-                title="Courses"
-                value={totalCourses}
-                icon={BookOpen}
-                gradient="from-blue-500 to-blue-600"
-                delay={0}
-              />
-              <StatsCard
-                title="Students"
-                value={totalStudents}
-                icon={Users}
-                gradient="from-emerald-500 to-emerald-600"
-                delay={1}
-              />
-              <StatsCard
-                title="Sessions"
-                value={totalSessions}
-                icon={PlayCircle}
-                gradient="from-purple-500 to-purple-600"
-                delay={2}
-              />
-              <StatsCard
-                title="Active"
-                value={activeCourses}
-                icon={TrendingUp}
-                gradient="from-orange-500 to-orange-600"
-                delay={3}
-              />
-            </div>
-          </div>
-
           {/* Search and Filter */}
           <div className="space-y-2">
             <div className="relative">
@@ -347,57 +267,48 @@ export default function CoursesPage() {
                 className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl text-sm h-10"
               />
             </div>
-
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              <select
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
-              >
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept === "all" ? "All Departments" : dept}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
+            >
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept === "all" ? "All Departments" : dept}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Content - Mobile optimized */}
+      {/* Courses List - Full width */}
       <div className="px-4 py-4">
         {isLoading ? (
           <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Card
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
                 key={i}
-                className="animate-pulse bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-              >
-                <CardContent className="p-4">
-                  <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg" />
-                </CardContent>
-              </Card>
+                className="h-28 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
+              />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="text-center py-12 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-            <CardContent>
-              <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400 font-semibold">
-                {search || departmentFilter !== "all"
-                  ? "No courses found"
-                  : "No courses yet"}
-              </p>
-              <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
-                {search || departmentFilter !== "all"
-                  ? "Try adjusting your search"
-                  : isAdmin || isLecturer
-                    ? "Create your first course"
-                    : "Ask your admin to enroll you"}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12">
+            <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-500 dark:text-gray-400 font-semibold">
+              {search || departmentFilter !== "all"
+                ? "No courses found"
+                : "No courses yet"}
+            </p>
+            <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+              {search || departmentFilter !== "all"
+                ? "Try adjusting your search"
+                : isAdmin || isLecturer
+                  ? "Create your first course"
+                  : "Ask your admin to enroll you"}
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
             {filtered.map((course, i) => (
@@ -544,17 +455,6 @@ export default function CoursesPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Hide scrollbar styles */}
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 }
