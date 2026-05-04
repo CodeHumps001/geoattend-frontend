@@ -158,6 +158,7 @@ export default function CoursesPage() {
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState({
     code: "",
     name: "",
@@ -166,11 +167,15 @@ export default function CoursesPage() {
     lecturerId: "",
   });
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // First, get the current student ID if user is a student
   const { data: studentData } = useQuery({
-    queryKey: ["current-student"],
+    queryKey: ["current-student", user?.email],
     queryFn: async () => {
-      if (!isStudent) return null;
+      if (!isStudent || !user?.email) return null;
       const res = await api.get("/api/v1/students");
       const students = res.data.data?.students || [];
       const currentStudent = students.find(
@@ -178,36 +183,31 @@ export default function CoursesPage() {
       );
       return currentStudent;
     },
-    enabled: isStudent && !!user?.email,
+    enabled: isStudent && !!user?.email && mounted,
   });
 
   // Fetch all courses
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["courses"],
+    queryKey: ["courses", mounted],
     queryFn: async () => {
       const res = await api.get("/api/v1/courses");
       return res.data.data;
     },
+    enabled: mounted,
   });
 
   const allCourses = data?.courses || [];
 
   // Filter courses based on role
   const visibleCourses = allCourses.filter((course) => {
-    // For lecturers: only courses they teach
     if (isLecturer) {
       return course.lecturer?.user?.email === user?.email;
     }
-
-    // For students: only courses they are enrolled in
     if (isStudent && studentData) {
-      // Check if student is enrolled in this course
       return course.enrollments?.some(
         (enrollment) => enrollment.studentId === studentData.id,
       );
     }
-
-    // For admins: all courses
     return true;
   });
 
@@ -251,6 +251,23 @@ export default function CoursesPage() {
       setCreating(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+        <div className="px-4 py-4">
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="h-28 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
@@ -342,24 +359,6 @@ export default function CoursesPage() {
                     ? "Try adjusting your search"
                     : "Create your first course"}
             </p>
-            {isStudent && !isLoading && (
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => router.push("/profile")}
-              >
-                Contact Admin
-              </Button>
-            )}
-            {isLecturer && !isLoading && filtered.length === 0 && (
-              <Button
-                className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                onClick={() => setShowCreateModal(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Course
-              </Button>
-            )}
           </div>
         ) : (
           <div className="space-y-3">
