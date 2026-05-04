@@ -29,6 +29,9 @@ import {
   CardContent,
   CardHeader,
   CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
