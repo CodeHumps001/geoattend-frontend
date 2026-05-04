@@ -135,3 +135,35 @@
     @apply font-sans;
   }
 }
+
+/* Prevent zoom on input focus on iOS */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Improve touch targets */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Prevent pull-to-refresh on iOS for the main container */
+body {
+  overscroll-behavior: none;
+}
+
+/* Better scrolling on mobile */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
