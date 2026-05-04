@@ -21,11 +21,15 @@ import {
   Hash,
   Building,
   Eye,
-  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardFooter,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -66,16 +70,12 @@ const roleConfig = {
     color: "from-blue-500 to-blue-600",
     bg: "bg-blue-100 dark:bg-blue-900/30",
     text: "text-blue-700 dark:text-blue-300",
-    border: "border-blue-200 dark:border-blue-800",
-    icon: GraduationCap,
     badge: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
   },
   LECTURER: {
     color: "from-emerald-500 to-emerald-600",
     bg: "bg-emerald-100 dark:bg-emerald-900/30",
     text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-200 dark:border-emerald-800",
-    icon: UserCheck,
     badge:
       "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300",
   },
@@ -83,51 +83,16 @@ const roleConfig = {
     color: "from-violet-500 to-violet-600",
     bg: "bg-violet-100 dark:bg-violet-900/30",
     text: "text-violet-700 dark:text-violet-300",
-    border: "border-violet-200 dark:border-violet-800",
-    icon: Shield,
     badge:
       "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300",
   },
 };
-
-// Stats Card Component
-function StatsCard({ title, value, icon: Icon, gradient, delay }) {
-  return (
-    <motion.div
-      variants={fadeUp}
-      custom={delay}
-      initial="hidden"
-      animate="visible"
-    >
-      <Card className="relative overflow-hidden border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all duration-300 group">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                {title}
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {value}
-              </p>
-            </div>
-            <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
-            >
-              <Icon className="w-5 h-5 text-white" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
 
 // User Detail Modal
 function UserDetailModal({ user, isOpen, onClose }) {
   if (!user) return null;
 
   const config = roleConfig[user.role] || roleConfig.STUDENT;
-  const Icon = config.icon;
   const initials =
     user.name
       ?.split(" ")
@@ -176,10 +141,7 @@ function UserDetailModal({ user, isOpen, onClose }) {
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Role
                   </p>
-                  <Badge className={`mt-1 ${config.badge}`}>
-                    <Icon className="w-3 h-3 mr-1" />
-                    {user.role}
-                  </Badge>
+                  <Badge className={`mt-1 ${config.badge}`}>{user.role}</Badge>
                 </div>
                 {user.student?.studentCode && (
                   <div>
@@ -446,13 +408,6 @@ export default function UsersPage() {
     currentPage * itemsPerPage,
   );
 
-  const stats = {
-    total: allUsers.length,
-    students: allUsers.filter((u) => u.role === "STUDENT").length,
-    lecturers: allUsers.filter((u) => u.role === "LECTURER").length,
-    admins: allUsers.filter((u) => u.role === "ADMIN").length,
-  };
-
   const handleEnrollSuccess = () => {
     refetchStudents();
     queryClient.invalidateQueries({ queryKey: ["all-students-full"] });
@@ -479,80 +434,48 @@ export default function UsersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
-      {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-6 pb-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-4">
-            <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-              User Management
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-              Manage students, lecturers, and administrators
-            </p>
-          </div>
-
-          {/* Stats Cards - Horizontal scroll on mobile */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <StatsCard
-              title="Total Users"
-              value={stats.total}
-              icon={Users}
-              gradient="from-gray-500 to-gray-600"
-              delay={0}
-            />
-            <StatsCard
-              title="Students"
-              value={stats.students}
-              icon={GraduationCap}
-              gradient="from-blue-500 to-blue-600"
-              delay={1}
-            />
-            <StatsCard
-              title="Lecturers"
-              value={stats.lecturers}
-              icon={UserCheck}
-              gradient="from-emerald-500 to-emerald-600"
-              delay={2}
-            />
-            <StatsCard
-              title="Admins"
-              value={stats.admins}
-              icon={Shield}
-              gradient="from-violet-500 to-violet-600"
-              delay={3}
-            />
-          </div>
-
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name, email, or student code..."
-                className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl"
-              />
-            </div>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
-            >
-              <option value="all">All Roles</option>
-              <option value="STUDENT">Students</option>
-              <option value="LECTURER">Lecturers</option>
-              <option value="ADMIN">Admins</option>
-            </select>
-          </div>
+      {/* Header - Clean and simple */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+        <div className="px-4 py-4">
+          <h1 className="text-xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+            User Management
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+            Manage students, lecturers, and administrators
+          </p>
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      {/* Search and Filter - Full width */}
+      <div className="sticky top-[73px] z-30 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex flex-col gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, email, or student code..."
+              className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl h-10 text-sm"
+            />
+          </div>
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
+          >
+            <option value="all">All Roles</option>
+            <option value="STUDENT">Students</option>
+            <option value="LECTURER">Lecturers</option>
+            <option value="ADMIN">Admins</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Users List - Full width, main content */}
+      <div className="px-4 py-4">
         {loadingStudents ? (
           <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
               <div
                 key={i}
                 className="h-16 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
@@ -560,21 +483,88 @@ export default function UsersPage() {
             ))}
           </div>
         ) : filteredUsers.length === 0 ? (
-          <Card className="text-center py-12 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-            <CardContent>
-              <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400 font-semibold">
-                No users found
-              </p>
-              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-                {search
-                  ? "Try a different search term"
-                  : "No users registered yet"}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12">
+            <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-500 dark:text-gray-400 font-semibold">
+              No users found
+            </p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+              {search
+                ? "Try a different search term"
+                : "No users registered yet"}
+            </p>
+          </div>
         ) : (
           <>
+            {/* Mobile Card View - Full width cards */}
+            <div className="md:hidden space-y-3">
+              {paginatedUsers.map((user) => (
+                <Card
+                  key={user.id}
+                  className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div
+                        className="flex items-center gap-3 flex-1"
+                        onClick={() => setSelectedUser(user)}
+                      >
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm">
+                            {getInitials(user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 dark:text-white truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className={getRoleBadge(user.role)}>
+                        {user.role === "STUDENT"
+                          ? "Student"
+                          : user.role === "LECTURER"
+                            ? "Lecturer"
+                            : "Admin"}
+                      </Badge>
+                    </div>
+
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                      {user.student?.studentCode ||
+                        user.lecturer?.staffCode ||
+                        "-"}
+                    </div>
+
+                    <div className="flex gap-2">
+                      {user.role === "STUDENT" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEnrollTarget(user)}
+                          className="flex-1 h-9 text-xs border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Enroll
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedUser(user)}
+                        className="flex-1 h-9 text-xs"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <Table>
@@ -615,7 +605,11 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell onClick={() => setSelectedUser(user)}>
                         <Badge className={getRoleBadge(user.role)}>
-                          {user.role}
+                          {user.role === "STUDENT"
+                            ? "Student"
+                            : user.role === "LECTURER"
+                              ? "Lecturer"
+                              : "Admin"}
                         </Badge>
                       </TableCell>
                       <TableCell
@@ -656,80 +650,13 @@ export default function UsersPage() {
               </Table>
             </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden space-y-3">
-              {paginatedUsers.map((user) => (
-                <Card
-                  key={user.id}
-                  className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div
-                        className="flex items-center gap-3"
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm">
-                            {getInitials(user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">
-                            {user.name}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge className={getRoleBadge(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </div>
-
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      {user.student?.studentCode ||
-                        user.lecturer?.staffCode ||
-                        "-"}
-                    </div>
-
-                    <div className="flex gap-2">
-                      {user.role === "STUDENT" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEnrollTarget(user)}
-                          className="flex-1 h-9 text-xs border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Enroll
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setSelectedUser(user)}
-                        className="flex-1 h-9 text-xs"
-                      >
-                        <Eye className="w-3 h-3 mr-1" />
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Pagination */}
+            {/* Pagination - Compact */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                  {Math.min(currentPage * itemsPerPage, filteredUsers.length)}{" "}
-                  of {filteredUsers.length} users
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {filteredUsers.length} total
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <Button
                     variant="outline"
                     size="sm"
@@ -739,33 +666,9 @@ export default function UsersPage() {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <div className="flex gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={
-                            currentPage === pageNum ? "default" : "outline"
-                          }
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className="h-8 w-8 p-0"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
+                  <span className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400">
+                    {currentPage} / {totalPages}
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
