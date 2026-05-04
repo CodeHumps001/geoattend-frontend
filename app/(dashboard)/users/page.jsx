@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import {
@@ -11,6 +11,7 @@ import {
   GraduationCap,
   UserCheck,
   Shield,
+  ChevronLeft,
   ChevronRight,
   BookOpen,
   Plus,
@@ -19,19 +20,14 @@ import {
   Mail,
   Hash,
   Building,
-  Filter,
-  UserPlus,
-  Clock,
-  Award,
-  Calendar,
+  Eye,
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
@@ -47,6 +43,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -86,6 +90,7 @@ const roleConfig = {
   },
 };
 
+// Stats Card Component
 function StatsCard({ title, value, icon: Icon, gradient, delay }) {
   return (
     <motion.div
@@ -95,20 +100,20 @@ function StatsCard({ title, value, icon: Icon, gradient, delay }) {
       animate="visible"
     >
       <Card className="relative overflow-hidden border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all duration-300 group">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                 {title}
               </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {value}
               </p>
             </div>
             <div
-              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
+              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
             >
-              <Icon className="w-6 h-6 text-white" />
+              <Icon className="w-5 h-5 text-white" />
             </div>
           </div>
         </CardContent>
@@ -117,151 +122,7 @@ function StatsCard({ title, value, icon: Icon, gradient, delay }) {
   );
 }
 
-function UserCard({ user, index, onEnroll, onViewDetails }) {
-  const config = roleConfig[user.role] || roleConfig.STUDENT;
-  const Icon = config.icon;
-  const initials =
-    user.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "U";
-
-  const courseCount = user.student?.enrollments?.length || 0;
-
-  const attendanceRate = user.student?.attendanceRate || 0;
-
-  return (
-    <motion.div
-      variants={fadeUp}
-      custom={index}
-      initial="hidden"
-      animate="visible"
-      whileHover={{ y: -2 }}
-    >
-      <Card className="border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white dark:bg-gray-900">
-        <CardContent className="p-5" onClick={() => onViewDetails(user)}>
-          <div className="flex items-start gap-4">
-            <Avatar className="w-14 h-14 flex-shrink-0 ring-2 ring-offset-2 ring-indigo-100 dark:ring-indigo-900">
-              <AvatarFallback
-                className={`bg-gradient-to-br ${config.color} text-white font-bold text-base`}
-              >
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center flex-wrap gap-2 mb-1">
-                <p className="font-bold text-gray-900 dark:text-white text-base truncate">
-                  {user.name}
-                </p>
-                <Badge className={`text-xs font-bold border-0 ${config.badge}`}>
-                  <Icon className="w-3 h-3 mr-1" />
-                  {user.role}
-                </Badge>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                <span className="flex items-center gap-1">
-                  <Mail className="w-3 h-3" />
-                  {user.email}
-                </span>
-                {user.student?.studentCode && (
-                  <span className="flex items-center gap-1">
-                    <Hash className="w-3 h-3" />
-                    {user.student.studentCode}
-                  </span>
-                )}
-                {user.lecturer?.staffCode && (
-                  <span className="flex items-center gap-1">
-                    <Hash className="w-3 h-3" />
-                    {user.lecturer.staffCode}
-                  </span>
-                )}
-              </div>
-
-              {user.student && (
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex items-center gap-1">
-                    <BookOpen className="w-3 h-3 text-blue-500 dark:text-blue-400" />
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                      {courseCount} Course{courseCount !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                      {attendanceRate}% Attendance
-                    </span>
-                  </div>
-                  <div className="h-2 w-16 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full"
-                      style={{ width: `${attendanceRate}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {user.lecturer && (
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <Building className="w-3 h-3" />
-                    {user.lecturer.department}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <Award className="w-3 h-3" />
-                    Staff Member
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {user.role === "STUDENT" && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEnroll(user);
-                }}
-                className="flex-shrink-0 h-9 px-3 text-xs font-semibold border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-all"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Enroll
-              </Button>
-            )}
-          </div>
-
-          {user.student?.enrollments?.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Enrolled Courses
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {user.student.enrollments.slice(0, 3).map((e) => (
-                  <span
-                    key={e.id}
-                    className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium"
-                  >
-                    {e.course?.code}
-                  </span>
-                ))}
-                {user.student.enrollments.length > 3 && (
-                  <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-1 rounded-full font-medium">
-                    +{user.student.enrollments.length - 3} more
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
+// User Detail Modal
 function UserDetailModal({ user, isOpen, onClose }) {
   if (!user) return null;
 
@@ -415,6 +276,7 @@ function UserDetailModal({ user, isOpen, onClose }) {
   );
 }
 
+// Enroll Modal
 function EnrollModal({ student, isOpen, onClose, onSuccess }) {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [enrolling, setEnrolling] = useState(false);
@@ -428,7 +290,6 @@ function EnrollModal({ student, isOpen, onClose, onSuccess }) {
   });
 
   const courses = coursesData?.courses || [];
-
   const enrolledCourseIds =
     student?.student?.enrollments?.map((e) => e.courseId) || [];
   const availableCourses = courses.filter(
@@ -548,6 +409,8 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState(null);
   const [enrollTarget, setEnrollTarget] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const {
     data: studentsData,
@@ -562,7 +425,6 @@ export default function UsersPage() {
   });
 
   const students = studentsData?.students || [];
-
   const allUsers = students.map((s) => ({
     ...s.user,
     student: s,
@@ -573,11 +435,16 @@ export default function UsersPage() {
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase()) ||
       u.student?.studentCode?.toLowerCase().includes(search.toLowerCase());
-
     const matchesRole = roleFilter === "all" || u.role === roleFilter;
-
     return matchesSearch && matchesRole;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   const stats = {
     total: allUsers.length,
@@ -591,22 +458,41 @@ export default function UsersPage() {
     queryClient.invalidateQueries({ queryKey: ["all-students-full"] });
   };
 
+  const getInitials = (name) => {
+    return (
+      name
+        ?.split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "U"
+    );
+  };
+
+  const getRoleBadge = (role) => {
+    if (role === "STUDENT")
+      return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300";
+    if (role === "LECTURER")
+      return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300";
+    return "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-6 pt-8 pb-6 sticky top-0 z-40">
+      {/* Header */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-6 pb-4 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                User Management
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                Manage students, lecturers, and administrators
-              </p>
-            </div>
+          <div className="mb-4">
+            <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              User Management
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              Manage students, lecturers, and administrators
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          {/* Stats Cards - Horizontal scroll on mobile */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             <StatsCard
               title="Total Users"
               value={stats.total}
@@ -637,20 +523,21 @@ export default function UsersPage() {
             />
           </div>
 
+          {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-              <input
+              <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name, email, or student code..."
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-1 focus:ring-blue-400 dark:focus:ring-blue-500 transition-all"
+                className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl"
               />
             </div>
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
+              className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500"
             >
               <option value="all">All Roles</option>
               <option value="STUDENT">Students</option>
@@ -661,31 +548,22 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      {/* Users Table */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {loadingStudents ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
                 key={i}
-                className="animate-pulse border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800" />
-                    <div className="flex-1">
-                      <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded w-48 mb-2" />
-                      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-64" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                className="h-16 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
+              />
             ))}
           </div>
         ) : filteredUsers.length === 0 ? (
-          <Card className="text-center py-16 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <Card className="text-center py-12 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
             <CardContent>
-              <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">
+              <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 font-semibold">
                 No users found
               </p>
               <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
@@ -696,17 +574,213 @@ export default function UsersPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {filteredUsers.map((user, i) => (
-              <UserCard
-                key={user.id}
-                user={user}
-                index={i}
-                onEnroll={setEnrollTarget}
-                onViewDetails={setSelectedUser}
-              />
-            ))}
-          </div>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 dark:bg-gray-800/50">
+                    <TableHead className="font-semibold">User</TableHead>
+                    <TableHead className="font-semibold">Email</TableHead>
+                    <TableHead className="font-semibold">Role</TableHead>
+                    <TableHead className="font-semibold">Details</TableHead>
+                    <TableHead className="font-semibold text-center">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedUsers.map((user) => (
+                    <TableRow
+                      key={user.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                    >
+                      <TableCell onClick={() => setSelectedUser(user)}>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs">
+                              {getInitials(user.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {user.name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell
+                        onClick={() => setSelectedUser(user)}
+                        className="text-gray-600 dark:text-gray-400"
+                      >
+                        {user.email}
+                      </TableCell>
+                      <TableCell onClick={() => setSelectedUser(user)}>
+                        <Badge className={getRoleBadge(user.role)}>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell
+                        onClick={() => setSelectedUser(user)}
+                        className="text-sm text-gray-500 dark:text-gray-400"
+                      >
+                        {user.student?.studentCode ||
+                          user.lecturer?.staffCode ||
+                          "-"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {user.role === "STUDENT" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEnrollTarget(user);
+                            }}
+                            className="h-8 px-3 text-xs border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Enroll
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedUser(user)}
+                          className="h-8 px-3 ml-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {paginatedUsers.map((user) => (
+                <Card
+                  key={user.id}
+                  className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div
+                        className="flex items-center gap-3"
+                        onClick={() => setSelectedUser(user)}
+                      >
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm">
+                            {getInitials(user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className={getRoleBadge(user.role)}>
+                        {user.role}
+                      </Badge>
+                    </div>
+
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                      {user.student?.studentCode ||
+                        user.lecturer?.staffCode ||
+                        "-"}
+                    </div>
+
+                    <div className="flex gap-2">
+                      {user.role === "STUDENT" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEnrollTarget(user)}
+                          className="flex-1 h-9 text-xs border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Enroll
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedUser(user)}
+                        className="flex-1 h-9 text-xs"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, filteredUsers.length)}{" "}
+                  of {filteredUsers.length} users
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={
+                            currentPage === pageNum ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="h-8 w-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -715,7 +789,6 @@ export default function UsersPage() {
         isOpen={!!selectedUser}
         onClose={() => setSelectedUser(null)}
       />
-
       <EnrollModal
         student={enrollTarget}
         isOpen={!!enrollTarget}
