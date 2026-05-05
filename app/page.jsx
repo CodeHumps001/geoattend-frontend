@@ -13,7 +13,6 @@ import {
   Globe,
   GraduationCap,
   MapPin,
-  Settings,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -23,14 +22,13 @@ import {
   TrendingUp,
   Award,
   BookOpen,
+  Zap,
+  Copy,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
-// ── Animation variants ─────────────────────────────────────────
+// ── Animation variants ────────────────────────────────────
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
   visible: (i = 0) => ({
@@ -45,14 +43,13 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.08 } },
 };
 
-// ── Custom hook ────────────────────────────────────────────────
 function useScrollReveal(margin = "-80px") {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin });
   return [ref, isInView];
 }
 
-// ── Static Data ─────────────────────────────────────────────────
+// ── Static Data ───────────────────────────────────────────
 const statsData = {
   institutions: 50,
   studentsTracked: 15000,
@@ -63,34 +60,61 @@ const statsData = {
   sessionsToday: 186,
 };
 
-// ── Ticker ─────────────────────────────────────────────────
+const sampleActivities = [
+  {
+    name: "Yaw Fosu",
+    action: "Marked present · 12m from class",
+    time: "Just now",
+    status: "present",
+  },
+  {
+    name: "CS301 Lecture",
+    action: "Session started by Course Rep",
+    time: "2 mins ago",
+    status: "session",
+  },
+  {
+    name: "Ama Serwaa",
+    action: "Marked present · 8m from class",
+    time: "5 mins ago",
+    status: "present",
+  },
+  {
+    name: "MATH201 Tutorial",
+    action: "Session ended · 28 present",
+    time: "10 mins ago",
+    status: "session",
+  },
+];
+
+// ── Ticker ────────────────────────────────────────────────
 function Ticker() {
-  const TICKER_ITEMS = [
-    `GPS Verified Attendance`,
-    `Live Analytics`,
-    `Instant Reports`,
-    `${statsData.institutions}+ Institutions`,
-    `${statsData.studentsTracked}+ Students`,
-    `Real-time Sync`,
-    `Role-based Access`,
-    `${statsData.radius}m Accuracy`,
-    `Secure & Private`,
-    `Built for Schools`,
+  const items = [
+    "GPS Verified Attendance",
+    "Live Analytics",
+    "Instant Reports",
+    `${statsData.institutions}+ Classes`,
+    `${statsData.studentsTracked.toLocaleString()}+ Students`,
+    "Real-time Sync",
+    "Course Rep Powered",
+    `${statsData.radius}m GPS Radius`,
+    "Secure & Private",
+    "Built for Schools",
   ];
 
   return (
-    <div className="overflow-hidden border-y border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#050816] py-4">
+    <div className="overflow-hidden border-y border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-[#050816] py-4">
       <motion.div
         className="flex gap-10 whitespace-nowrap"
         animate={{ x: ["0%", "-50%"] }}
         transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
       >
-        {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+        {[...items, ...items].map((item, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300"
+            className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-400"
           >
-            <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 flex-shrink-0" />
             {item}
           </div>
         ))}
@@ -99,20 +123,20 @@ function Ticker() {
   );
 }
 
-// ── Stats Mini Card ─────────────────────────────────────────────────
+// ── Stats Mini Card ───────────────────────────────────────
 function StatsMiniCard({ title, value, icon }) {
   return (
     <motion.div
-      whileHover={{ y: -4, borderColor: "rgba(34,211,238,0.3)" }}
-      className="bg-gray-100 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl p-5 shadow-2xl transition-colors"
+      whileHover={{ y: -4 }}
+      className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-5 shadow-lg transition-all"
     >
       <div className="flex items-center justify-between mb-4">
-        <div className="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center text-cyan-300">
+        <div className="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center text-cyan-600 dark:text-cyan-300">
           {icon}
         </div>
-        <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold">
+        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
           <motion.div
-            className="w-2 h-2 rounded-full bg-emerald-400"
+            className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400"
             animate={{ opacity: [1, 0.3, 1] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
           />
@@ -122,12 +146,12 @@ function StatsMiniCard({ title, value, icon }) {
       <h3 className="text-3xl font-black text-gray-900 dark:text-white">
         {typeof value === "number" ? value.toLocaleString() : value}
       </h3>
-      <p className="text-gray-600 dark:text-slate-400 text-sm mt-1">{title}</p>
+      <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">{title}</p>
     </motion.div>
   );
 }
 
-// ── Role Card ──────────────────────────────────────────────────
+// ── Role Card ─────────────────────────────────────────────
 function RoleCard({ title, desc, icon, color, features, delay }) {
   const [ref, inView] = useScrollReveal();
   return (
@@ -138,13 +162,13 @@ function RoleCard({ title, desc, icon, color, features, delay }) {
       initial="hidden"
       animate={inView ? "visible" : "hidden"}
       whileHover={{ y: -8, scale: 1.02 }}
-      className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 backdrop-blur-xl p-8 shadow-2xl group"
+      className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-8 shadow-lg group"
     >
       <div
-        className={`absolute top-0 right-0 w-48 h-48 blur-3xl opacity-15 group-hover:opacity-25 transition-opacity ${color}`}
+        className={`absolute top-0 right-0 w-48 h-48 blur-3xl opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
       />
       <div className="relative z-10">
-        <div className="w-16 h-16 rounded-2xl bg-gray-200 dark:bg-white/10 border border-gray-300 dark:border-white/10 flex items-center justify-center text-gray-900 dark:text-white mb-6 group-hover:scale-110 transition-transform">
+        <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-700 dark:text-white mb-6 group-hover:scale-110 transition-transform">
           {icon}
         </div>
         <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3">
@@ -159,7 +183,7 @@ function RoleCard({ title, desc, icon, color, features, delay }) {
               key={i}
               className="flex items-center gap-3 text-gray-700 dark:text-slate-300"
             >
-              <CheckCircle2 className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-cyan-500 dark:text-cyan-400 flex-shrink-0" />
               {item}
             </div>
           ))}
@@ -169,7 +193,7 @@ function RoleCard({ title, desc, icon, color, features, delay }) {
   );
 }
 
-// ── Feature Card ───────────────────────────────────────────────
+// ── Feature Card ──────────────────────────────────────────
 function FeatureCard({ icon, title, desc, delay }) {
   const [ref, inView] = useScrollReveal();
   return (
@@ -179,10 +203,10 @@ function FeatureCard({ icon, title, desc, delay }) {
       custom={delay}
       initial="hidden"
       animate={inView ? "visible" : "hidden"}
-      whileHover={{ y: -5, borderColor: "rgba(34,211,238,0.3)" }}
-      className="border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 transition-colors"
+      whileHover={{ y: -5 }}
+      className="border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 rounded-2xl p-6 hover:shadow-md transition-all"
     >
-      <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center text-cyan-300 mb-4">
+      <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center text-cyan-600 dark:text-cyan-300 mb-4">
         {icon}
       </div>
       <h4 className="text-gray-900 dark:text-white font-bold text-lg mb-2">
@@ -195,7 +219,7 @@ function FeatureCard({ icon, title, desc, delay }) {
   );
 }
 
-// ── Step Card ──────────────────────────────────────────────────
+// ── Step Card ─────────────────────────────────────────────
 function StepCard({ number, title, desc, delay }) {
   const [ref, inView] = useScrollReveal();
   return (
@@ -227,7 +251,7 @@ function StepCard({ number, title, desc, delay }) {
   );
 }
 
-// ── Testimonial Card ───────────────────────────────────────────
+// ── Testimonial Card ──────────────────────────────────────
 function TestimonialCard({ name, role, school, quote, avatar, delay }) {
   const [ref, inView] = useScrollReveal();
   return (
@@ -238,7 +262,7 @@ function TestimonialCard({ name, role, school, quote, avatar, delay }) {
       initial="hidden"
       animate={inView ? "visible" : "hidden"}
       whileHover={{ y: -5 }}
-      className="border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 backdrop-blur-xl rounded-3xl p-7"
+      className="border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 rounded-3xl p-7 shadow-sm"
     >
       <div className="flex gap-1 mb-5">
         {[...Array(5)].map((_, i) => (
@@ -253,7 +277,7 @@ function TestimonialCard({ name, role, school, quote, avatar, delay }) {
       <div className="flex items-center gap-3">
         <Avatar className="w-11 h-11 border-2 border-cyan-400/30">
           <AvatarImage src={avatar} />
-          <AvatarFallback className="bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 text-sm font-bold">
+          <AvatarFallback className="bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 text-sm font-bold">
             {name
               .split(" ")
               .map((n) => n[0])
@@ -264,7 +288,7 @@ function TestimonialCard({ name, role, school, quote, avatar, delay }) {
           <p className="text-gray-900 dark:text-white font-semibold text-sm">
             {name}
           </p>
-          <p className="text-gray-600 dark:text-slate-500 text-xs">
+          <p className="text-gray-500 dark:text-slate-500 text-xs">
             {role} · {school}
           </p>
         </div>
@@ -273,7 +297,7 @@ function TestimonialCard({ name, role, school, quote, avatar, delay }) {
   );
 }
 
-// ── Stat Block ─────────────────────────────────────────────────────
+// ── Stat Block ────────────────────────────────────────────
 function StatBlock({ value, label, delay }) {
   const [ref, inView] = useScrollReveal();
   return (
@@ -302,35 +326,43 @@ function StatBlock({ value, label, delay }) {
   );
 }
 
-// ── Sample Activities ─────────────────────────────────────────────────
-const sampleActivities = [
-  {
-    name: "Yaw Fosu",
-    action: "Marked present",
-    time: "Just now",
-    status: "present",
-  },
-  {
-    name: "CS301 Lecture",
-    action: "Session started by Dr. Mensah",
-    time: "2 mins ago",
-    status: "session",
-  },
-  {
-    name: "Ama Serwaa",
-    action: "Marked present",
-    time: "5 mins ago",
-    status: "present",
-  },
-  {
-    name: "MATH201 Tutorial",
-    action: "Session ended",
-    time: "10 mins ago",
-    status: "session",
-  },
-];
+// ── SectionHeader ─────────────────────────────────────────
+function SectionHeader({
+  badge,
+  badgeIcon: BadgeIcon,
+  title,
+  subtitle,
+  delay,
+}) {
+  const [ref, inView] = useScrollReveal();
+  return (
+    <motion.div
+      ref={ref}
+      variants={fadeUp}
+      custom={delay}
+      initial="hidden"
+      animate={inView ? "visible" : "hidden"}
+      className="text-center mb-16"
+    >
+      <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-500/10 border border-cyan-400/20 mb-6">
+        <BadgeIcon className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
+        <span className="text-cyan-700 dark:text-cyan-200 text-sm font-medium">
+          {badge}
+        </span>
+      </div>
+      <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="text-gray-600 dark:text-slate-400 text-xl max-w-2xl mx-auto">
+          {subtitle}
+        </p>
+      )}
+    </motion.div>
+  );
+}
 
-// ── Main Page ──────────────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────
 export default function LandingPage() {
   const router = useRouter();
   const { scrollY } = useScroll();
@@ -351,7 +383,7 @@ export default function LandingPage() {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-white/80 dark:bg-[#050816]/80 backdrop-blur-2xl border-b border-gray-200 dark:border-white/10 shadow-xl shadow-black/20"
+            ? "bg-white/90 dark:bg-[#050816]/90 backdrop-blur-2xl border-b border-gray-200 dark:border-white/10 shadow-sm"
             : "bg-transparent"
         }`}
       >
@@ -360,20 +392,18 @@ export default function LandingPage() {
             className="flex items-center gap-3"
             whileHover={{ scale: 1.02 }}
           >
-            <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg flex-shrink-0">
               <Image
                 src="/klassrep.png"
-                alt="KlassRep Logo"
-                width={55}
-                height={55}
-                className="object-cover rounded"
+                alt="KlassRep"
+                width={40}
+                height={40}
+                className="object-cover w-full h-full"
               />
             </div>
-            <div>
-              <h1 className="text-gray-900 dark:text-white font-black text-xl leading-none">
-                KlassRep
-              </h1>
-            </div>
+            <h1 className="text-gray-900 dark:text-white font-black text-xl leading-none">
+              KlassRep
+            </h1>
           </motion.div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -382,7 +412,7 @@ export default function LandingPage() {
                 <motion.a
                   key={item}
                   href={`#${item.toLowerCase().replace(" ", "-")}`}
-                  className="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors text-sm font-medium"
+                  className="text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors text-sm font-medium"
                   whileHover={{ y: -1 }}
                 >
                   {item}
@@ -402,7 +432,7 @@ export default function LandingPage() {
             </motion.button>
             <motion.button
               onClick={() => router.push("/register")}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold shadow-2xl shadow-cyan-500/30 text-sm"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold shadow-lg shadow-cyan-500/25 text-sm"
               whileHover={{
                 scale: 1.05,
                 boxShadow: "0 20px 40px rgba(34,211,238,0.35)",
@@ -417,15 +447,17 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="relative min-h-screen flex items-center overflow-hidden px-6 pt-32 pb-20">
+        {/* Background */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-3xl" />
-          <div className="absolute bottom-[-200px] right-[-200px] w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-3xl" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:80px_80px]" />
+          <div className="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] bg-cyan-500/10 dark:bg-cyan-500/15 rounded-full blur-3xl" />
+          <div className="absolute bottom-[-200px] right-[-200px] w-[600px] h-[600px] bg-blue-600/10 dark:bg-blue-600/15 rounded-full blur-3xl" />
+          {/* Grid — works in both modes */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:80px_80px]" />
         </div>
 
         <motion.div
           style={{ y: heroY }}
-          className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-start w-full"
+          className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center w-full"
         >
           {/* Left */}
           <div>
@@ -433,11 +465,11 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 backdrop-blur-xl mb-8"
+              className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 mb-8"
             >
-              <Sparkles className="w-4 h-4 text-cyan-300" />
-              <span className="text-cyan-200 text-sm font-medium">
-                Next Generation Attendance Platform
+              <Sparkles className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
+              <span className="text-cyan-700 dark:text-cyan-200 text-sm font-medium">
+                Built Around Your Course Rep
               </span>
             </motion.div>
 
@@ -450,12 +482,12 @@ export default function LandingPage() {
                   Attendance
                 </span>
                 <br />
-                <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                  Powered by
+                <span className="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 dark:from-cyan-300 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                  the way it
                 </span>
                 <br />
                 <span className="text-gray-900 dark:text-white">
-                  Intelligence
+                  actually works
                 </span>
               </motion.h1>
 
@@ -463,9 +495,12 @@ export default function LandingPage() {
                 variants={fadeUp}
                 className="text-gray-600 dark:text-slate-400 text-xl leading-relaxed max-w-xl mb-10"
               >
-                KlassRep transforms how institutions manage attendance with GPS
-                verification, fraud prevention, live analytics, and role-based
-                access — all in one platform.
+                KlassRep puts your{" "}
+                <strong className="text-gray-900 dark:text-white">
+                  course rep
+                </strong>{" "}
+                in charge of attendance — the person already doing this job in
+                real life. GPS-verified, fraud-proof, and live.
               </motion.p>
 
               <motion.div
@@ -479,19 +514,16 @@ export default function LandingPage() {
                   }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => router.push("/register")}
-                  className="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg flex items-center justify-center gap-3 shadow-2xl shadow-cyan-500/30"
+                  className="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg flex items-center justify-center gap-3 shadow-xl shadow-cyan-500/25"
                 >
-                  Launch Platform
+                  Get Started Free
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
                 <motion.button
-                  whileHover={{
-                    scale: 1.02,
-                    backgroundColor: "rgba(255,255,255,0.08)",
-                  }}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => router.push("/login")}
-                  className="px-8 py-4 rounded-2xl border border-gray-300 dark:border-white/10 bg-gray-100 dark:bg-white/5 backdrop-blur-xl text-gray-900 dark:text-white font-semibold transition-all"
+                  className="px-8 py-4 rounded-2xl border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-white font-semibold transition-all hover:bg-gray-50 dark:hover:bg-white/10"
                 >
                   Sign in instead
                 </motion.button>
@@ -502,10 +534,10 @@ export default function LandingPage() {
                   {[1, 2, 3, 4].map((n) => (
                     <Avatar
                       key={n}
-                      className="border-2 border-[#030712] w-11 h-11"
+                      className="border-2 border-white dark:border-[#030712] w-11 h-11"
                     >
                       <AvatarImage src={`https://i.pravatar.cc/100?img=${n}`} />
-                      <AvatarFallback className="bg-cyan-500/20 text-cyan-300 text-xs">
+                      <AvatarFallback className="bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 text-xs">
                         U{n}
                       </AvatarFallback>
                     </Avatar>
@@ -513,10 +545,11 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="text-gray-900 dark:text-white font-semibold">
-                    Trusted by 50+ institutions
+                    Trusted by {statsData.institutions}+ classes
                   </p>
-                  <p className="text-slate-400 text-sm">
-                    15,000+ students actively tracked
+                  <p className="text-gray-500 dark:text-slate-400 text-sm">
+                    {statsData.studentsTracked.toLocaleString()}+ students
+                    actively tracked
                   </p>
                 </div>
               </motion.div>
@@ -529,24 +562,24 @@ export default function LandingPage() {
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              className="relative rounded-[32px] border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 backdrop-blur-2xl p-6 shadow-[0_0_100px_rgba(34,211,238,0.12)]"
+              className="relative rounded-[32px] border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 backdrop-blur-2xl p-6 shadow-2xl"
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-gray-900 dark:text-white text-2xl font-black">
                     Live Dashboard
                   </h3>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-gray-500 dark:text-slate-400 text-sm">
                     Real-time attendance monitoring
                   </p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/20">
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-emerald-400"
+                    className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400"
                     animate={{ opacity: [1, 0.3, 1] }}
                     transition={{ repeat: Infinity, duration: 1.5 }}
                   />
-                  <span className="text-emerald-300 text-sm font-medium">
+                  <span className="text-emerald-700 dark:text-emerald-300 text-sm font-medium">
                     ACTIVE
                   </span>
                 </div>
@@ -575,37 +608,34 @@ export default function LandingPage() {
                 />
               </div>
 
-              <div className="rounded-3xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-black/20 p-5">
+              {/* Activity feed */}
+              <div className="rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 p-5">
                 <div className="flex items-center justify-between mb-5">
                   <h4 className="text-gray-900 dark:text-white font-bold">
                     Live Activity Feed
                   </h4>
-                  <BellRing className="w-5 h-5 text-cyan-300" />
+                  <BellRing className="w-5 h-5 text-cyan-600 dark:text-cyan-300" />
                 </div>
                 <div className="space-y-3">
-                  {sampleActivities.slice(0, 4).map((item, i) => (
+                  {sampleActivities.map((item, i) => (
                     <motion.div
                       key={i}
                       whileHover={{ x: 5 }}
-                      className="flex items-center justify-between rounded-2xl border border-gray-200 dark:border-white/5 bg-gray-100 dark:bg-white/[0.03] px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/[0.03] px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                             item.status === "present"
                               ? "bg-emerald-500/10 border border-emerald-400/20"
-                              : item.status === "absent"
-                                ? "bg-red-500/10 border border-red-400/20"
-                                : "bg-cyan-500/10 border border-cyan-400/20"
+                              : "bg-cyan-500/10 border border-cyan-400/20"
                           }`}
                         >
                           <ShieldCheck
                             className={`w-5 h-5 ${
                               item.status === "present"
-                                ? "text-emerald-400"
-                                : item.status === "absent"
-                                  ? "text-red-400"
-                                  : "text-cyan-300"
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-cyan-600 dark:text-cyan-300"
                             }`}
                           />
                         </div>
@@ -613,12 +643,12 @@ export default function LandingPage() {
                           <h5 className="text-gray-900 dark:text-white font-semibold text-sm">
                             {item.name}
                           </h5>
-                          <p className="text-slate-400 text-xs">
+                          <p className="text-gray-500 dark:text-slate-400 text-xs">
                             {item.action}
                           </p>
                         </div>
                       </div>
-                      <span className="text-slate-500 text-xs flex-shrink-0">
+                      <span className="text-gray-400 dark:text-slate-500 text-xs flex-shrink-0">
                         {item.time}
                       </span>
                     </motion.div>
@@ -626,7 +656,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Floating verification card */}
+              {/* Floating card — verification */}
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{
@@ -636,20 +666,20 @@ export default function LandingPage() {
                 }}
                 className="absolute -top-8 -right-8 hidden lg:block"
               >
-                <div className="w-56 rounded-3xl border border-cyan-400/20 bg-[#07111f]/90 backdrop-blur-2xl p-5 shadow-2xl">
+                <div className="w-56 rounded-3xl border border-cyan-400/20 bg-white dark:bg-[#07111f]/95 backdrop-blur-2xl p-5 shadow-xl">
                   <div className="flex items-center justify-between mb-4">
-                    <Wifi className="text-cyan-300 w-5 h-5" />
-                    <span className="text-emerald-400 text-xs font-semibold">
+                    <Wifi className="text-cyan-600 dark:text-cyan-300 w-5 h-5" />
+                    <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
                       SECURE
                     </span>
                   </div>
                   <h3 className="text-gray-900 dark:text-white text-3xl font-black mb-1">
                     {statsData.gpsAccuracy}%
                   </h3>
-                  <p className="text-slate-400 text-sm mb-4">
+                  <p className="text-gray-500 dark:text-slate-400 text-sm mb-4">
                     Verification Accuracy
                   </p>
-                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${statsData.gpsAccuracy}%` }}
@@ -660,7 +690,7 @@ export default function LandingPage() {
                 </div>
               </motion.div>
 
-              {/* Floating marked card */}
+              {/* Floating card — present */}
               <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{
@@ -671,18 +701,18 @@ export default function LandingPage() {
                 }}
                 className="absolute -bottom-6 -left-8 hidden lg:block"
               >
-                <div className="w-48 rounded-2xl border border-emerald-400/20 bg-[#07111f]/90 backdrop-blur-2xl p-4 shadow-2xl">
+                <div className="w-52 rounded-2xl border border-emerald-400/20 bg-white dark:bg-[#07111f]/95 backdrop-blur-2xl p-4 shadow-xl">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-emerald-400 text-xs font-semibold">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
                       PRESENT
                     </span>
                   </div>
                   <p className="text-gray-900 dark:text-white font-bold text-sm">
-                    {sampleActivities[0]?.name || "Student"}
+                    {sampleActivities[0].name}
                   </p>
-                  <p className="text-slate-400 text-xs mt-0.5">
-                    Just now · marked present
+                  <p className="text-gray-500 dark:text-slate-400 text-xs mt-0.5">
+                    12m from class · Just now
                   </p>
                 </div>
               </motion.div>
@@ -696,10 +726,10 @@ export default function LandingPage() {
           transition={{ duration: 1.5, repeat: Infinity }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
         >
-          <span className="text-slate-500 text-sm font-medium">
+          <span className="text-gray-500 dark:text-slate-500 text-sm font-medium">
             Scroll to explore
           </span>
-          <ChevronDown className="text-slate-500 w-5 h-5" />
+          <ChevronDown className="text-gray-400 dark:text-slate-500 w-5 h-5" />
         </motion.div>
       </section>
 
@@ -707,11 +737,11 @@ export default function LandingPage() {
       <Ticker />
 
       {/* ── Stats ── */}
-      <section className="py-24 px-6 border-b border-white/5">
+      <section className="py-24 px-6 border-b border-gray-100 dark:border-white/5">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12">
           <StatBlock
             value={`${statsData.institutions}+`}
-            label="Institutions"
+            label="Classes created"
             delay={0}
           />
           <StatBlock
@@ -746,17 +776,17 @@ export default function LandingPage() {
                   animate={inView ? "visible" : "hidden"}
                 >
                   <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-500/10 border border-cyan-400/20 mb-6">
-                    <Globe className="w-4 h-4 text-cyan-300" />
-                    <span className="text-cyan-200 text-sm font-medium">
+                    <Globe className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
+                    <span className="text-cyan-700 dark:text-cyan-200 text-sm font-medium">
                       How it works
                     </span>
                   </div>
                   <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-6 leading-tight">
                     Three steps to modern attendance
                   </h2>
-                  <p className="text-slate-400 text-lg leading-relaxed">
-                    No hardware. No paper. No manual entry. Just open KlassRep
-                    and the GPS does the rest.
+                  <p className="text-gray-600 dark:text-slate-400 text-lg leading-relaxed">
+                    No hardware. No paper. No manual entry. Just open KlassRep —
+                    your course rep handles everything.
                   </p>
                 </motion.div>
               );
@@ -765,20 +795,20 @@ export default function LandingPage() {
           <div className="space-y-0">
             <StepCard
               number={1}
-              title="Lecturer starts a session"
-              desc="The lecturer opens KlassRep and taps Start Class. Their phone GPS automatically sets the classroom location — no manual coordinates needed."
+              title="Course rep creates the class"
+              desc="The course rep registers and gets a unique class code. They share it with classmates on WhatsApp — students join in seconds."
               delay={0}
             />
             <StepCard
               number={2}
-              title="Students mark attendance"
-              desc="Students tap once to mark attendance. KlassRep checks GPS in real time — within 100m means PRESENT, outside means ABSENT. No faking it."
+              title="Rep starts a session, students mark in"
+              desc="When class begins, the rep opens KlassRep and taps Start Session. Students mark attendance with one tap — GPS checks they're physically there."
               delay={1}
             />
             <StepCard
               number={3}
-              title="Reports generated instantly"
-              desc="Attendance percentages update live. Lecturers and admins see who attended, when, and from exactly where — all in one beautiful dashboard."
+              title="Records are generated instantly"
+              desc="Attendance percentages update live. Everyone can see who's present, and the rep gets a full history for every course and session."
               delay={2}
             />
           </div>
@@ -788,48 +818,28 @@ export default function LandingPage() {
       {/* ── Features Grid ── */}
       <section
         id="features"
-        className="py-32 px-6 bg-white/[0.02] border-y border-white/5"
+        className="py-32 px-6 bg-gray-50 dark:bg-white/[0.02] border-y border-gray-100 dark:border-white/5"
       >
         <div className="max-w-6xl mx-auto">
-          {(() => {
-            const [ref, inView] = useScrollReveal();
-            return (
-              <motion.div
-                ref={ref}
-                variants={fadeUp}
-                initial="hidden"
-                animate={inView ? "visible" : "hidden"}
-                className="text-center mb-16"
-              >
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-500/10 border border-cyan-400/20 mb-6">
-                  <Sparkles className="w-4 h-4 text-cyan-300" />
-                  <span className="text-cyan-200 text-sm font-medium">
-                    Platform Features
-                  </span>
-                </div>
-                <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4">
-                  Everything you need
-                </h2>
-                <p className="text-slate-400 text-xl max-w-2xl mx-auto">
-                  Built from the ground up for educational institutions of any
-                  size.
-                </p>
-              </motion.div>
-            );
-          })()}
-
+          <SectionHeader
+            badge="Platform Features"
+            badgeIcon={Sparkles}
+            title="Everything you need"
+            subtitle="Built from the ground up for how students actually manage attendance."
+            delay={0}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <FeatureCard
               delay={0}
               icon={<MapPin className="w-5 h-5" />}
               title="GPS Verification"
-              desc="Real GPS coordinates checked on every mark — students can't fake being in class from their dorm room."
+              desc="Real GPS coordinates checked on every mark — students can't fake being in class from their hostel room."
             />
             <FeatureCard
               delay={1}
               icon={<ShieldCheck className="w-5 h-5" />}
               title="Fraud Prevention"
-              desc="Each student can only mark attendance once per session. The system prevents duplicate and fraudulent entries."
+              desc="Each student marks once per session. The system rejects duplicate and fraudulent entries automatically."
             />
             <FeatureCard
               delay={2}
@@ -845,33 +855,33 @@ export default function LandingPage() {
             />
             <FeatureCard
               delay={4}
-              icon={<TrendingUp className="w-5 h-5" />}
-              title="Attendance Reports"
-              desc="Generate detailed reports per student, course, or session. Export data for academic records."
+              icon={<Copy className="w-5 h-5" />}
+              title="Class Code System"
+              desc="Course rep gets a unique class code. Students join by entering it — no admin bottleneck."
             />
             <FeatureCard
               delay={5}
               icon={<Users className="w-5 h-5" />}
               title="Role-based Access"
-              desc="Students, Lecturers, and Admins each see only what they need — clean, focused dashboards for every role."
+              desc="Course reps manage. Students mark. Each role sees exactly what they need — nothing more."
             />
             <FeatureCard
               delay={6}
               icon={<Smartphone className="w-5 h-5" />}
               title="Mobile Friendly"
-              desc="Fully responsive web app plus a dedicated React Native mobile app — works beautifully on any device."
+              desc="Fully responsive web app that works beautifully on any device — phone, tablet, or desktop."
             />
             <FeatureCard
               delay={7}
               icon={<Award className="w-5 h-5" />}
               title="Attendance Threshold"
-              desc="Students and admins are instantly notified when attendance drops below acceptable academic thresholds."
+              desc="Students see instantly when their attendance drops below 75% so they can act before it's too late."
             />
             <FeatureCard
               delay={8}
               icon={<BookOpen className="w-5 h-5" />}
               title="Course Management"
-              desc="Lecturers create and manage courses. Admins enroll students. Everything is organized by semester."
+              desc="Course reps create and manage all courses for their class. No IT department needed."
             />
           </div>
         </div>
@@ -880,70 +890,40 @@ export default function LandingPage() {
       {/* ── Roles ── */}
       <section id="roles" className="py-32 px-6">
         <div className="max-w-6xl mx-auto">
-          {(() => {
-            const [ref, inView] = useScrollReveal();
-            return (
-              <motion.div
-                ref={ref}
-                variants={fadeUp}
-                initial="hidden"
-                animate={inView ? "visible" : "hidden"}
-                className="text-center mb-16"
-              >
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-500/10 border border-cyan-400/20 mb-6">
-                  <Users className="w-4 h-4 text-cyan-300" />
-                  <span className="text-cyan-200 text-sm font-medium">
-                    Built for everyone
-                  </span>
-                </div>
-                <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4">
-                  One platform, three roles
-                </h2>
-                <p className="text-slate-400 text-xl max-w-2xl mx-auto">
-                  Every person at your school gets a tailored experience.
-                </p>
-              </motion.div>
-            );
-          })()}
-
-          <div className="grid lg:grid-cols-3 gap-8">
+          <SectionHeader
+            badge="Built for everyone"
+            badgeIcon={Users}
+            title="Two roles, one platform"
+            subtitle="Every person in your class gets a tailored experience designed for their needs."
+            delay={0}
+          />
+          <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <RoleCard
               delay={0}
-              title="For Students"
-              desc="Mark attendance with one tap, view your percentage per course, and track your session history in a clean personal dashboard."
-              icon={<GraduationCap className="w-7 h-7" />}
+              title="For Course Reps"
+              desc="You're already managing attendance in real life. KlassRep gives you the digital tools to do it faster, smarter, and with zero paper."
+              icon={<Zap className="w-7 h-7" />}
               color="bg-cyan-500"
               features={[
-                "One-tap GPS attendance marking",
-                "Live attendance percentage",
-                "Course enrollment overview",
-                "Session history & records",
+                "Create your class with a unique code",
+                "Start GPS-verified sessions instantly",
+                "Monitor attendance in real time",
+                "Full course and member management",
+                "Share invite links via WhatsApp",
               ]}
             />
             <RoleCard
               delay={1}
-              title="For Lecturers"
-              desc="Start sessions with your phone GPS, monitor who's present in real time, and manage all your courses from one place."
-              icon={<Users className="w-7 h-7" />}
+              title="For Students"
+              desc="Join your class in seconds with the code from your course rep. Mark attendance with one tap and always know where you stand."
+              icon={<GraduationCap className="w-7 h-7" />}
               color="bg-blue-500"
               features={[
-                "Start GPS-verified sessions",
-                "Live attendance monitoring",
-                "Course & enrollment management",
-                "Per-student attendance reports",
-              ]}
-            />
-            <RoleCard
-              delay={2}
-              title="For Admins"
-              desc="Full institution oversight — manage every user, course, and attendance record with enterprise-grade controls and insights."
-              icon={<Settings className="w-7 h-7" />}
-              color="bg-indigo-500"
-              features={[
-                "Manage all users & roles",
-                "Full attendance reports",
-                "Enroll students in courses",
-                "Institution-wide analytics",
+                "Join class instantly with class code",
+                "One-tap GPS attendance marking",
+                "Live attendance percentage per course",
+                "See active sessions in real time",
+                "Full attendance history",
               ]}
             />
           </div>
@@ -953,58 +933,39 @@ export default function LandingPage() {
       {/* ── Testimonials ── */}
       <section
         id="testimonials"
-        className="py-32 px-6 bg-white/[0.02] border-y border-white/5"
+        className="py-32 px-6 bg-gray-50 dark:bg-white/[0.02] border-y border-gray-100 dark:border-white/5"
       >
         <div className="max-w-6xl mx-auto">
-          {(() => {
-            const [ref, inView] = useScrollReveal();
-            return (
-              <motion.div
-                ref={ref}
-                variants={fadeUp}
-                initial="hidden"
-                animate={inView ? "visible" : "hidden"}
-                className="text-center mb-16"
-              >
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-500/10 border border-cyan-400/20 mb-6">
-                  <Award className="w-4 h-4 text-cyan-300" />
-                  <span className="text-cyan-200 text-sm font-medium">
-                    Testimonials
-                  </span>
-                </div>
-                <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4">
-                  Loved by educators
-                </h2>
-                <p className="text-slate-400 text-xl max-w-2xl mx-auto">
-                  Real feedback from institutions using KlassRep.
-                </p>
-              </motion.div>
-            );
-          })()}
-
+          <SectionHeader
+            badge="Testimonials"
+            badgeIcon={Award}
+            title="Loved by students"
+            subtitle="Real feedback from people using KlassRep every day."
+            delay={0}
+          />
           <div className="grid md:grid-cols-3 gap-6">
             <TestimonialCard
               delay={0}
-              name="Dr. Kwame Mensah"
-              role="Lecturer"
-              school="KsTU"
-              quote="KlassRep eliminated the 10 minutes we used to waste doing manual register. I start my session, students mark in, and I see everything live."
+              name="Yaw Fosu"
+              role="Course Rep"
+              school="KsTU CS Level 300"
+              quote="I used to spend 10 minutes doing manual register every lecture. With KlassRep I just tap Start Session and everyone marks in. Done in 2 minutes."
               avatar="https://i.pravatar.cc/100?img=11"
             />
             <TestimonialCard
               delay={1}
               name="Ama Boateng"
               role="Student"
-              school="KsTU"
-              quote="I love how simple it is. One tap and I'm marked present. No more worrying about the lecturer forgetting to mark me or losing paper registers."
+              school="KsTU CS Level 300"
+              quote="I love seeing my attendance percentage per course. I knew immediately when I was getting close to the 75% threshold and made sure I attended more."
               avatar="https://i.pravatar.cc/100?img=5"
             />
             <TestimonialCard
               delay={2}
-              name="Emmanuel Asante"
-              role="Academic Admin"
-              school="KsTU"
-              quote="The reports are incredible. I can pull up any student's attendance across all courses in seconds. What used to take hours now takes a click."
+              name="Kofi Mensah"
+              role="Student"
+              school="KsTU IT Level 200"
+              quote="Joining my class was so easy — my rep dropped the class code in our WhatsApp group and I was in within a minute. The GPS check is really smart."
               avatar="https://i.pravatar.cc/100?img=8"
             />
           </div>
@@ -1014,9 +975,9 @@ export default function LandingPage() {
       {/* ── Final CTA ── */}
       <section className="relative py-32 px-6 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-blue-600/5 dark:from-cyan-500/10 dark:to-blue-600/10 blur-3xl" />
         </div>
-        <div className="relative z-10 max-w-5xl mx-auto rounded-[40px] border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 backdrop-blur-2xl p-16 text-center shadow-[0_0_120px_rgba(34,211,238,0.12)]">
+        <div className="relative z-10 max-w-5xl mx-auto rounded-[40px] border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-2xl p-12 md:p-16 text-center shadow-xl">
           {(() => {
             const [ref, inView] = useScrollReveal();
             return (
@@ -1027,14 +988,13 @@ export default function LandingPage() {
                 animate={inView ? "visible" : "hidden"}
               >
                 <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-6 leading-tight">
-                  Built to feel premium.
+                  Ready to modernize
                   <br />
-                  Engineered to scale.
+                  attendance at your school?
                 </h2>
-                <p className="text-slate-400 text-xl max-w-2xl mx-auto mb-10">
-                  KlassRep is not just another attendance system. It is a
-                  complete intelligent infrastructure for schools, universities,
-                  and modern institutions.
+                <p className="text-gray-600 dark:text-slate-400 text-xl max-w-2xl mx-auto mb-10">
+                  KlassRep is free to start. Your course rep creates the class,
+                  shares the code, and your whole class is running in minutes.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
                   <motion.button
@@ -1044,19 +1004,16 @@ export default function LandingPage() {
                     }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => router.push("/register")}
-                    className="px-10 py-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg shadow-2xl shadow-cyan-500/30 flex items-center gap-3 w-full sm:w-auto justify-center"
+                    className="px-10 py-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg shadow-xl shadow-cyan-500/25 flex items-center gap-3 w-full sm:w-auto justify-center"
                   >
                     Start for free
                     <ArrowRight className="w-5 h-5" />
                   </motion.button>
                   <motion.button
-                    whileHover={{
-                      scale: 1.02,
-                      backgroundColor: "rgba(255,255,255,0.08)",
-                    }}
+                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => router.push("/login")}
-                    className="px-10 py-5 rounded-2xl border border-gray-300 dark:border-white/10 bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white font-semibold transition-all w-full sm:w-auto"
+                    className="px-10 py-5 rounded-2xl border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-white font-semibold transition-all hover:bg-gray-50 dark:hover:bg-white/10 w-full sm:w-auto"
                   >
                     Sign in instead
                   </motion.button>
@@ -1068,27 +1025,27 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-white/10 py-12 px-6">
+      <footer className="border-t border-gray-200 dark:border-white/10 py-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+                <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg">
                   <Image
                     src="/klassrep.png"
-                    alt="KlassRep Logo"
-                    width={55}
-                    height={55}
-                    className="object-cover rounded"
+                    alt="KlassRep"
+                    width={40}
+                    height={40}
+                    className="object-cover w-full h-full"
                   />
                 </div>
                 <span className="text-gray-900 dark:text-white font-black text-lg">
                   KlassRep
                 </span>
               </div>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                Intelligent attendance infrastructure for modern educational
-                institutions.
+              <p className="text-gray-500 dark:text-slate-500 text-sm leading-relaxed">
+                Attendance management built around the people already doing the
+                job — your course rep.
               </p>
             </div>
             <div>
@@ -1101,7 +1058,7 @@ export default function LandingPage() {
                     <a
                       key={item}
                       href="#"
-                      className="block text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                      className="block text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300 text-sm transition-colors"
                     >
                       {item}
                     </a>
@@ -1119,7 +1076,7 @@ export default function LandingPage() {
                     <a
                       key={item}
                       href="#"
-                      className="block text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                      className="block text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300 text-sm transition-colors"
                     >
                       {item}
                     </a>
@@ -1136,7 +1093,7 @@ export default function LandingPage() {
                   <a
                     key={item}
                     href="#"
-                    className="block text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                    className="block text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300 text-sm transition-colors"
                   >
                     {item}
                   </a>
@@ -1144,15 +1101,16 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-slate-500 text-sm">
+          <div className="border-t border-gray-100 dark:border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-gray-400 dark:text-slate-500 text-sm">
               © 2026 KlassRep. All rights reserved.
             </p>
-            <p className="text-slate-500 text-sm">
+            <p className="text-gray-400 dark:text-slate-500 text-sm">
               Built by{" "}
-              <span className="text-slate-400 font-medium">
+              <span className="text-gray-700 dark:text-slate-400 font-medium">
                 Fosu Yaw Humphrey
-              </span>
+              </span>{" "}
+              · Velux Corporation
             </p>
           </div>
         </div>
