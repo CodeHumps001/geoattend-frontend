@@ -173,11 +173,14 @@ export default function RegisterPage() {
     }
     setLookingUp(true);
     try {
-      const res = await api.get(
-        `/api/v1/auth/class/${classCode.trim().toUpperCase()}`,
+      // Encode the class code properly
+      const encodedClassCode = encodeURIComponent(
+        classCode.trim().toUpperCase(),
       );
+      const res = await api.get(`/api/v1/auth/class/${encodedClassCode}`);
       setClassInfo(res.data.data.classSpace);
     } catch (err) {
+      console.error("Lookup error:", err);
       toast.error(err.response?.data?.message || "Class not found");
       setClassInfo(null);
     } finally {
