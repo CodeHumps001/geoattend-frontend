@@ -96,14 +96,17 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const { data: course, isLoading } = useQuery({
+  // Fetch course details - matches backend response structure
+  const { data: response, isLoading } = useQuery({
     queryKey: ["course", id],
     queryFn: async () => {
       const res = await api.get(`/api/v1/courses/${id}`);
-      return res.data.data;
+      return res.data.data; // { course: {...} }
     },
     enabled: !!id,
   });
+
+  const course = response?.course;
 
   if (isLoading) {
     return (
@@ -122,17 +125,23 @@ export default function CourseDetailPage() {
     );
   }
 
-  const sessionCount = course.sessions?.length || 0;
-  const studentCount = course._count?.enrollments || 0;
-  const presentCount =
-    course.sessions?.reduce(
-      (acc, s) =>
-        acc + (s.attendance?.filter((a) => a.status === "PRESENT").length || 0),
-      0,
-    ) || 0;
-  const totalAttendance =
-    course.sessions?.reduce((acc, s) => acc + (s.attendance?.length || 0), 0) ||
-    0;
+  // Safely access arrays with fallbacks
+  const sessions = course.sessions || [];
+  const sessionCount = sessions.length;
+
+  // Get student count from classSpace if available
+  const studentCount = course.classSpace?.students?.length || 0;
+
+  // Calculate attendance stats
+  let presentCount = 0;
+  let totalAttendance = 0;
+
+  sessions.forEach((session) => {
+    const attendance = session.attendance || [];
+    totalAttendance += attendance.length;
+    presentCount += attendance.filter((a) => a.status === "PRESENT").length;
+  });
+
   const avgAttendance =
     totalAttendance > 0
       ? Math.round((presentCount / totalAttendance) * 100)
@@ -204,7 +213,7 @@ export default function CourseDetailPage() {
           </Button>
         </div>
 
-        {course.sessions?.length === 0 ? (
+        {sessions.length === 0 ? (
           <Card className="text-center py-8">
             <CardContent>
               <PlayCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
@@ -216,7 +225,7 @@ export default function CourseDetailPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {course.sessions.map((session, i) => (
+            {sessions.map((session, i) => (
               <SessionItem key={session.id} session={session} />
             ))}
           </div>
