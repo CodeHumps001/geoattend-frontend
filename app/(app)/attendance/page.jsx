@@ -144,7 +144,7 @@ function SessionCard({ session, onMark, marking, attendanceStatus }) {
                   Getting your location...
                 </span>
               ) : (
-                <span className="flex items-center gap-4 animate-ping transition-">
+                <span className="flex items-center gap-4  transition-">
                   <MapPin className="w-5 h-5" />
                   Mark My Attendance
                 </span>
