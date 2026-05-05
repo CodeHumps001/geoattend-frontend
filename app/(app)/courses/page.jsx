@@ -13,7 +13,6 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  PlayCircle,
   Users,
   ChevronRight,
   Loader2,
@@ -48,7 +47,7 @@ const fadeUp = {
   }),
 };
 
-function CourseCard({ course, onEdit, onDelete }) {
+function CourseCard({ course, onEdit, onDelete, isRep }) {
   const router = useRouter();
   const sessionCount = course.sessions?.length || 0;
   const studentCount = course._count?.sessions || 0;
@@ -78,24 +77,27 @@ function CourseCard({ course, onEdit, onDelete }) {
                 {course.lecturerName || "No lecturer assigned"}
               </p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(course)}>
-                  <Edit className="w-4 h-4 mr-2" /> Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onDelete(course)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Only show edit/delete options for reps */}
+            {isRep && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(course)}>
+                    <Edit className="w-4 h-4 mr-2" /> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onDelete(course)}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
@@ -200,7 +202,10 @@ export default function CoursesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
 
-  // Fetch courses - FIXED: access data.data.courses
+  // Check if user is a rep (only reps can create/manage courses)
+  const isRep = user?.role === "rep";
+
+  // Fetch courses
   const { data: response, isLoading } = useQuery({
     queryKey: ["rep-courses"],
     queryFn: async () => {
@@ -248,16 +253,21 @@ export default function CoursesPage() {
             Courses
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Manage all the courses in your class
+            {isRep
+              ? "Manage all the courses in your class"
+              : "Browse all available courses"}
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          New Course
-        </Button>
+        {/* Only show New Course button for reps */}
+        {isRep && (
+          <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            New Course
+          </Button>
+        )}
       </div>
 
-      {/* Search */}
+      {/* Search - visible to everyone */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <Input
@@ -291,7 +301,9 @@ export default function CoursesPage() {
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
               {search
                 ? "Try a different search term"
-                : "Create your first course to get started"}
+                : isRep
+                  ? "Create your first course to get started"
+                  : "Check back later for new courses"}
             </p>
           </CardContent>
         </Card>
@@ -303,17 +315,20 @@ export default function CoursesPage() {
               course={course}
               onEdit={setEditingCourse}
               onDelete={handleDelete}
+              isRep={isRep}
             />
           ))}
         </div>
       )}
 
-      {/* Create Modal */}
-      <CreateCourseModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={() => queryClient.invalidateQueries(["rep-courses"])}
-      />
+      {/* Create Modal - Only shown to reps */}
+      {isRep && (
+        <CreateCourseModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => queryClient.invalidateQueries(["rep-courses"])}
+        />
+      )}
     </div>
   );
 }
