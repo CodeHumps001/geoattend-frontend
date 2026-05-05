@@ -362,7 +362,7 @@ export default function LandingPage() {
           >
             <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
               <Image
-                src="/logo.jpg"
+                src="/klassrep.png"
                 alt="KlassRep Logo"
                 width={55}
                 height={55}
@@ -1075,7 +1075,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
                   <Image
-                    src="/logo.jpg"
+                    src="/klassrep.png"
                     alt="KlassRep Logo"
                     width={55}
                     height={55}

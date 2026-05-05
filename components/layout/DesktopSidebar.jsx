@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
 
 const sidebarLinks = {
   rep: [
@@ -48,18 +49,19 @@ export default function DesktopSidebar({ user, isRep, pathname }) {
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-gray-800">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-            <Zap className="w-4 h-4 text-white" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+            <Image
+              src="/klassrep.png"
+              alt="KlassRep Logo"
+              width={55}
+              height={55}
+              className="object-cover rounded"
+            />
           </div>
-          <div>
-            <h1 className="font-black text-gray-900 dark:text-white text-lg leading-none">
-              Klassrep
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 text-xs">
-              Smart Attendance
-            </p>
-          </div>
+          <span className="text-gray-900 dark:text-white font-black text-lg">
+            KlassRep
+          </span>
         </div>
 
         {/* User Info */}

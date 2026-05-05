@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/axios";
 import useAuthStore from "@/store/authStore";
+import Image from "next/image";
 
 const slideIn = {
   hidden: { opacity: 0, x: 30 },
@@ -287,18 +288,19 @@ export default function RegisterPage() {
         </div>
 
         {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/30">
-            <Zap className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+            <Image
+              src="/klassrep.png"
+              alt="KlassRep Logo"
+              width={55}
+              height={55}
+              className="object-cover rounded"
+            />
           </div>
-          <div>
-            <h1 className="text-gray-900 dark:text-white font-black text-xl leading-none">
-              Klassrep
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 text-xs">
-              Smart Class Management
-            </p>
-          </div>
+          <span className="text-gray-900 dark:text-white font-black text-lg">
+            KlassRep
+          </span>
         </div>
 
         {/* Center */}
@@ -381,12 +383,18 @@ export default function RegisterPage() {
           className="w-full max-w-md"
         >
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+              <Image
+                src="/klassrep.png"
+                alt="KlassRep Logo"
+                width={55}
+                height={55}
+                className="object-cover rounded"
+              />
             </div>
-            <span className="text-gray-900 dark:text-white font-black text-xl">
-              Klassrep
+            <span className="text-gray-900 dark:text-white font-black text-lg">
+              KlassRep
             </span>
           </div>
 
