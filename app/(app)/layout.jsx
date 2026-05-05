@@ -2,9 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import ProtectedRoute from "@/components/layout/ProtectedRoute";
-import BottomTabBar from "@/components/layout/BottomTabBar";
+
 import DesktopSidebar from "@/components/layout/DesktopSidebar";
+import ProtectedRoute from "@/components/layout/ProtectedRoutes";
+import BottomTabBar from "@/components/layout/BottomTabBar";
 
 export default function AppLayout({ children }) {
   const pathname = usePathname();
