@@ -1,9 +1,9 @@
 // app/(app)/attendance/page.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -14,7 +14,6 @@ import {
   Navigation,
   Clock,
   Calendar,
-  Users,
   Wifi,
   AlertCircle,
   Sparkles,
@@ -36,19 +35,9 @@ const fadeUp = {
   }),
 };
 
-function SessionCard({
-  session,
-  onMark,
-  marking,
-  alreadyMarked,
-  attendanceStatus,
-}) {
-  const now = new Date();
-  const start = new Date(session.startTime);
-  const end = new Date(session.endTime);
-  const isActive = now >= start && now <= end;
-  const isFuture = now < start;
-
+function SessionCard({ session, onMark, marking, attendanceStatus }) {
+  const isActive = session.isOpen;
+  const isEnded = !session.isOpen;
   const hasAttended = attendanceStatus !== null;
   const isPresent = attendanceStatus === "PRESENT";
 
@@ -58,9 +47,7 @@ function SessionCard({
         className={`border-2 transition-all ${
           isActive
             ? "border-indigo-200 dark:border-indigo-800 shadow-lg shadow-indigo-100/50 dark:shadow-indigo-950/20"
-            : isFuture
-              ? "border-amber-200 dark:border-amber-800"
-              : "border-gray-200 dark:border-gray-800 opacity-75"
+            : "border-gray-200 dark:border-gray-800 opacity-75"
         }`}
       >
         <CardContent className="p-5">
@@ -73,14 +60,7 @@ function SessionCard({
                     LIVE NOW
                   </Badge>
                 )}
-                {isFuture && (
-                  <Badge
-                    variant="outline"
-                    className="text-amber-600 border-amber-200"
-                  >
-                    Upcoming
-                  </Badge>
-                )}
+                {isEnded && <Badge variant="secondary">Ended</Badge>}
               </div>
               <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">
                 {session.course?.name}
@@ -91,16 +71,11 @@ function SessionCard({
               <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {new Date(session.date).toLocaleDateString()}
+                  {new Date(session.startTime).toLocaleDateString()}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {new Date(session.startTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  {" - "}
-                  {new Date(session.endTime).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -114,12 +89,6 @@ function SessionCard({
               <MapPin className="w-4 h-4" />
               <span>{session.radiusMeters}m check-in radius</span>
             </div>
-            {!hasAttended && isFuture && (
-              <div className="flex items-center gap-1 text-xs text-amber-600">
-                <Clock className="w-3 h-3" />
-                <span>Starts soon</span>
-              </div>
-            )}
           </div>
 
           {hasAttended ? (
@@ -183,17 +152,6 @@ function SessionCard({
                 </span>
               )}
             </Button>
-          ) : isFuture ? (
-            <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
-              <Clock className="w-5 h-5 text-amber-600" />
-              <p className="text-amber-700 dark:text-amber-400 font-medium">
-                Session starts at{" "}
-                {new Date(session.startTime).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
           ) : (
             <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
               <XCircle className="w-5 h-5 text-gray-400" />
@@ -218,7 +176,7 @@ export default function AttendancePage() {
   const studentId = user?.student?.id;
 
   // Fetch student's enrolled courses
-  const { data: student } = useQuery({
+  const { data: student, isLoading: studentLoading } = useQuery({
     queryKey: ["student-profile", studentId],
     queryFn: async () => {
       const res = await api.get(`/api/v1/students/${studentId}`);
@@ -229,19 +187,26 @@ export default function AttendancePage() {
 
   const enrolledCourseIds = student?.enrollments?.map((e) => e.courseId) || [];
 
-  // Fetch all sessions for enrolled courses
-  const { data: sessions, isLoading } = useQuery({
-    queryKey: ["student-sessions", studentId],
+  // Fetch all sessions - FIXED: extract from response.data.data.sessions
+  const { data: sessionsResponse, isLoading: sessionsLoading } = useQuery({
+    queryKey: ["all-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/sessions");
-      const allSessions = res.data.data || [];
-      return allSessions.filter((s) => enrolledCourseIds.includes(s.courseId));
+      return res.data.data; // { sessions: [], count: number }
     },
-    enabled: enrolledCourseIds.length > 0,
+    enabled: !!user,
     refetchInterval: 10000,
   });
 
-  // Fetch attendance status for each session
+  // Extract sessions array
+  const allSessions = sessionsResponse?.sessions || [];
+
+  // Filter sessions for enrolled courses only
+  const sessions = allSessions.filter((s) =>
+    enrolledCourseIds.includes(s.courseId),
+  );
+
+  // Fetch attendance status for each session using the correct endpoint
   const { data: attendanceStatuses, refetch: refetchStatuses } = useQuery({
     queryKey: ["attendance-statuses", studentId],
     queryFn: async () => {
@@ -249,14 +214,17 @@ export default function AttendancePage() {
       const statuses = {};
       for (const session of sessions) {
         try {
+          // Use the correct endpoint for student attendance per course
           const res = await api.get(
-            `/api/v1/sessions/${session.id}/attendance/student/${studentId}`,
+            `/api/v1/attendance/student/${studentId}/course/${session.courseId}`,
           );
-          if (res.data.data) {
-            statuses[session.id] = res.data.data.status;
+          if (res.data.data?.stats?.percentage) {
+            const percentage = parseFloat(res.data.data.stats.percentage);
+            statuses[session.id] = percentage > 0 ? "PRESENT" : "ABSENT";
+          } else {
+            statuses[session.id] = null;
           }
         } catch (err) {
-          // No attendance record yet
           statuses[session.id] = null;
         }
       }
@@ -270,7 +238,6 @@ export default function AttendancePage() {
     setLocationStatus(null);
 
     try {
-      // Request location
       const position = await new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
           reject(new Error("Geolocation not supported"));
@@ -285,9 +252,7 @@ export default function AttendancePage() {
       const { latitude, longitude, accuracy } = position.coords;
       setLocationStatus({ latitude, longitude, accuracy });
 
-      // Mark attendance
       const res = await api.post("/api/v1/attendance/mark", {
-        studentId,
         sessionId,
         latitude,
         longitude,
@@ -295,17 +260,14 @@ export default function AttendancePage() {
 
       const result = res.data.data;
 
-      // Refresh status
       await refetchStatuses();
-      queryClient.invalidateQueries(["student-sessions"]);
+      queryClient.invalidateQueries(["all-sessions"]);
 
       if (result.status === "PRESENT") {
-        toast.success(
-          `✅ Present! You are ${result.distanceFromClass} from class.`,
-        );
+        toast.success(`✅ Present! ${result.distance} from class.`);
       } else {
         toast.error(
-          `❌ Absent — You are ${result.distanceFromClass} from class. Allowed radius is ${result.allowedRadius}.`,
+          `❌ Absent — ${result.distance} away. Allowed radius is ${result.allowedRadius}.`,
         );
       }
     } catch (err) {
@@ -324,34 +286,19 @@ export default function AttendancePage() {
     }
   };
 
-  const now = new Date();
-  const activeSessions =
-    sessions?.filter((s) => {
-      const start = new Date(s.startTime);
-      const end = new Date(s.endTime);
-      return now >= start && now <= end;
-    }) || [];
+  const activeSessions = sessions.filter((s) => s.isOpen === true);
+  const endedSessions = sessions.filter((s) => s.isOpen === false);
 
-  const upcomingSessions =
-    sessions?.filter((s) => {
-      const start = new Date(s.startTime);
-      return now < start;
-    }) || [];
-
-  const pastSessions =
-    sessions?.filter((s) => {
-      const end = new Date(s.endTime);
-      return now > end;
-    }) || [];
-
-  const totalSessions = sessions?.length || 0;
+  const totalSessions = sessions.length;
   const totalPresent = Object.values(attendanceStatuses || {}).filter(
     (s) => s === "PRESENT",
   ).length;
   const attendanceRate =
     totalSessions > 0 ? (totalPresent / totalSessions) * 100 : 0;
 
-  if (!studentId) {
+  const isLoading = studentLoading || sessionsLoading;
+
+  if (!studentId && !isLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <Card className="max-w-md">
@@ -440,7 +387,6 @@ export default function AttendancePage() {
                 session={session}
                 onMark={markAttendance}
                 marking={marking}
-                alreadyMarked={!!attendanceStatuses?.[session.id]}
                 attendanceStatus={attendanceStatuses?.[session.id] || null}
               />
             ))}
@@ -448,43 +394,20 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* Upcoming Sessions */}
-      {upcomingSessions.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-500" />
-            Upcoming Sessions
-          </h2>
-          <div className="space-y-4">
-            {upcomingSessions.map((session, i) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onMark={markAttendance}
-                marking={marking}
-                alreadyMarked={!!attendanceStatuses?.[session.id]}
-                attendanceStatus={attendanceStatuses?.[session.id] || null}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Past Sessions */}
-      {pastSessions.length > 0 && (
+      {/* Ended Sessions */}
+      {endedSessions.length > 0 && (
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-500" />
             Past Sessions
           </h2>
           <div className="space-y-4">
-            {pastSessions.map((session, i) => (
+            {endedSessions.map((session, i) => (
               <SessionCard
                 key={session.id}
                 session={session}
                 onMark={markAttendance}
                 marking={marking}
-                alreadyMarked={!!attendanceStatuses?.[session.id]}
                 attendanceStatus={attendanceStatuses?.[session.id] || null}
               />
             ))}
@@ -493,7 +416,7 @@ export default function AttendancePage() {
       )}
 
       {/* Empty State */}
-      {!isLoading && sessions?.length === 0 && (
+      {!isLoading && sessions.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
