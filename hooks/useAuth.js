@@ -1,37 +1,44 @@
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import useAuthStore from "@/store/authStore";
-import api from "@/lib/axios";
 
 export function useAuth() {
   const router = useRouter();
-  const { user, token, isAuthenticated, setAuth, logout } = useAuthStore();
-
-  // Fetch full profile on every session to get student/lecturer details
-  const { data: profileData } = useQuery({
-    queryKey: ["me", user?.id],
-    queryFn: async () => {
-      const res = await api.get("/api/v1/auth/me");
-      return res.data.data;
-    },
-    enabled: !!isAuthenticated,
-  });
-
-  const fullUser = profileData?.user || user;
+  const {
+    user,
+    token,
+    isAuthenticated,
+    setAuth,
+    updateUser,
+    logout,
+    _hasHydrated,
+  } = useAuthStore();
 
   const handleLogout = () => {
     logout();
     router.push("/login");
   };
 
+  const isCourseRep = user?.role === "COURSE_REP";
+  const isStudent = user?.role === "STUDENT";
+
+  // Course rep's class space
+  const classSpace = isCourseRep
+    ? user?.courseRep?.classSpace
+    : user?.student?.classSpace;
+
+  const classCode = classSpace?.classCode;
+
   return {
-    user: fullUser,
+    user,
     token,
     isAuthenticated,
+    _hasHydrated,
     setAuth,
+    updateUser,
     logout: handleLogout,
-    isStudent: fullUser?.role === "STUDENT",
-    isLecturer: fullUser?.role === "LECTURER",
-    isAdmin: fullUser?.role === "ADMIN",
+    isCourseRep,
+    isStudent,
+    classSpace,
+    classCode,
   };
 }
