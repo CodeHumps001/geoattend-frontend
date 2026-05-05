@@ -58,10 +58,10 @@ const fadeUp = {
 function SessionCard({ session, onEnd, onDelete, onViewDetails }) {
   const now = new Date();
   const start = new Date(session.startTime);
-  const end = new Date(session.endTime);
-  const isLive = now >= start && now <= end;
-  const isUpcoming = now < start;
-  const isEnded = now > end;
+  const end = session.endTime ? new Date(session.endTime) : null;
+  const isLive = session.isOpen;
+  const isUpcoming = false; // No upcoming since sessions are created as live
+  const isEnded = !session.isOpen;
 
   const presentCount =
     session.attendance?.filter((a) => a.status === "PRESENT").length || 0;
@@ -87,14 +87,6 @@ function SessionCard({ session, onEnd, onDelete, onViewDetails }) {
                     LIVE NOW
                   </Badge>
                 )}
-                {isUpcoming && (
-                  <Badge
-                    variant="outline"
-                    className="text-amber-600 border-amber-200 dark:border-amber-800 dark:text-amber-400"
-                  >
-                    Upcoming
-                  </Badge>
-                )}
                 {isEnded && <Badge variant="secondary">Ended</Badge>}
               </div>
               <h3 className="font-bold text-gray-900 dark:text-white mb-1">
@@ -106,16 +98,11 @@ function SessionCard({ session, onEnd, onDelete, onViewDetails }) {
               <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {new Date(session.date).toLocaleDateString()}
+                  {new Date(session.startTime).toLocaleDateString()}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {new Date(session.startTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  {" - "}
-                  {new Date(session.endTime).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -189,8 +176,6 @@ function StartSessionModal({ isOpen, onClose, onSuccess, courses }) {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [formData, setFormData] = useState({
     courseId: "",
-    startTime: "",
-    endTime: "",
     latitude: "",
     longitude: "",
     radiusMeters: 100,
@@ -225,17 +210,16 @@ function StartSessionModal({ isOpen, onClose, onSuccess, courses }) {
     setLoading(true);
     try {
       await api.post("/api/v1/sessions", {
-        ...formData,
-        startTime: new Date(formData.startTime).toISOString(),
-        endTime: new Date(formData.endTime).toISOString(),
+        courseId: Number(formData.courseId),
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        radiusMeters: formData.radiusMeters,
       });
       toast.success("Session started! Students can now mark attendance.");
       onSuccess();
       onClose();
       setFormData({
         courseId: "",
-        startTime: "",
-        endTime: "",
         latitude: "",
         longitude: "",
         radiusMeters: 100,
@@ -274,28 +258,6 @@ function StartSessionModal({ isOpen, onClose, onSuccess, courses }) {
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <Label>Start Time</Label>
-            <Input
-              type="datetime-local"
-              value={formData.startTime}
-              onChange={(e) =>
-                setFormData({ ...formData, startTime: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div>
-            <Label>End Time</Label>
-            <Input
-              type="datetime-local"
-              value={formData.endTime}
-              onChange={(e) =>
-                setFormData({ ...formData, endTime: e.target.value })
-              }
-              required
-            />
           </div>
           <div>
             <Label>GPS Radius (meters)</Label>
@@ -379,28 +341,35 @@ export default function SessionsPage() {
   const [sessionToEnd, setSessionToEnd] = useState(null);
 
   // Fetch courses for the dropdown
-  const { data: courses } = useQuery({
+  const { data: coursesResponse } = useQuery({
     queryKey: ["rep-courses"],
     queryFn: async () => {
       const res = await api.get("/api/v1/courses");
-      return res.data.data || [];
+      return res.data.data; // { courses: [], count: number }
     },
+    enabled: !!user,
   });
 
-  // Fetch all sessions
-  const { data: sessions, isLoading } = useQuery({
+  const courses = coursesResponse?.courses || [];
+
+  // Fetch all sessions - FIXED: access data.data.sessions
+  const { data: sessionsResponse, isLoading } = useQuery({
     queryKey: ["rep-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/sessions");
-      return res.data.data || [];
+      return res.data.data; // { sessions: [], count: number }
     },
-    refetchInterval: 10000, // Auto-refresh every 10 seconds for live updates
+    refetchInterval: 10000,
+    enabled: !!user,
   });
+
+  // Extract sessions array from response
+  const sessions = sessionsResponse?.sessions || [];
 
   // End session mutation
   const endMutation = useMutation({
     mutationFn: async (sessionId) => {
-      await api.patch(`/api/v1/sessions/${sessionId}/end`);
+      await api.patch(`/api/v1/sessions/${sessionId}/close`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["rep-sessions"]);
@@ -412,9 +381,10 @@ export default function SessionsPage() {
     },
   });
 
-  // Delete session mutation
+  // Delete session mutation (you'll need to add this endpoint or handle differently)
   const deleteMutation = useMutation({
     mutationFn: async (sessionId) => {
+      // Note: You may need to add a DELETE endpoint for sessions
       await api.delete(`/api/v1/sessions/${sessionId}`);
     },
     onSuccess: () => {
@@ -427,20 +397,17 @@ export default function SessionsPage() {
   });
 
   const now = new Date();
-  const filteredSessions = sessions?.filter((s) => {
+  const filteredSessions = sessions.filter((s) => {
     const matchesSearch =
       s.course?.name?.toLowerCase().includes(search.toLowerCase()) ||
       s.course?.code?.toLowerCase().includes(search.toLowerCase());
 
-    const start = new Date(s.startTime);
-    const end = new Date(s.endTime);
-
     if (activeTab === "active") {
-      return matchesSearch && now >= start && now <= end;
-    } else if (activeTab === "upcoming") {
-      return matchesSearch && now < start;
+      return matchesSearch && s.isOpen === true;
+    } else if (activeTab === "ended") {
+      return matchesSearch && s.isOpen === false;
     } else {
-      return matchesSearch && now > end;
+      return matchesSearch;
     }
   });
 
@@ -501,13 +468,13 @@ export default function SessionsPage() {
       <Tabs defaultValue="active" onValueChange={setActiveTab}>
         <TabsList className="w-full">
           <TabsTrigger value="active" className="flex-1">
-            Active
+            Live
           </TabsTrigger>
-          <TabsTrigger value="upcoming" className="flex-1">
-            Upcoming
+          <TabsTrigger value="ended" className="flex-1">
+            Ended
           </TabsTrigger>
-          <TabsTrigger value="past" className="flex-1">
-            Past
+          <TabsTrigger value="all" className="flex-1">
+            All
           </TabsTrigger>
         </TabsList>
 
@@ -520,7 +487,7 @@ export default function SessionsPage() {
             handleViewDetails,
           )}
         </TabsContent>
-        <TabsContent value="upcoming" className="mt-4">
+        <TabsContent value="ended" className="mt-4">
           {renderSessionList(
             filteredSessions,
             isLoading,
@@ -529,7 +496,7 @@ export default function SessionsPage() {
             handleViewDetails,
           )}
         </TabsContent>
-        <TabsContent value="past" className="mt-4">
+        <TabsContent value="all" className="mt-4">
           {renderSessionList(
             filteredSessions,
             isLoading,
@@ -582,7 +549,7 @@ function renderSessionList(
     );
   }
 
-  if (!sessions?.length) {
+  if (!sessions || sessions.length === 0) {
     return (
       <Card className="text-center py-12">
         <CardContent>
