@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Eye,
   EyeOff,
@@ -23,6 +24,7 @@ import {
   Search,
   Loader2,
   Building,
+  Copy, // ← add Copy here
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
@@ -134,6 +136,8 @@ export default function RegisterPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [classConfirmed, setClassConfirmed] = useState(false);
+  // Add this state at the top with other states
+  const [classCodeGenerated, setClassCodeGenerated] = useState(null);
 
   const {
     register,
@@ -173,7 +177,6 @@ export default function RegisterPage() {
   };
 
   const onSubmit = async (data) => {
-    // Validate step 2
     if (role === "STUDENT") {
       if (!classConfirmed) {
         toast.error("Please confirm your class");
@@ -217,12 +220,15 @@ export default function RegisterPage() {
       const { token, user } = res.data.data;
 
       setAuth(user, token);
-      toast.success(
-        role === "COURSE_REP"
-          ? `Class created! Your code is ${user.classCode} 🎉`
-          : "Welcome to the class! 🎉",
-      );
-      router.push("/dashboard");
+
+      if (role === "COURSE_REP") {
+        // Show class code screen before redirecting
+        setClassCodeGenerated(user.classCode);
+        setStep(3);
+      } else {
+        toast.success("Welcome to the class! 🎉");
+        router.push("/dashboard");
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {
@@ -230,7 +236,7 @@ export default function RegisterPage() {
     }
   };
 
-  const totalSteps = 2;
+  const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
 
   return (
@@ -293,35 +299,42 @@ export default function RegisterPage() {
                     ? "Create your class space"
                     : "Enter your class code",
               },
-            ].map((s) => (
-              <div key={s.n} className="flex items-center gap-4">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 transition-all duration-300 ${
-                    step > s.n
-                      ? "bg-emerald-500 text-white"
-                      : step === s.n
-                        ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30"
-                        : "bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-500"
-                  }`}
-                >
-                  {step > s.n ? <CheckCircle2 className="w-4 h-4" /> : s.n}
-                </div>
-                <div>
-                  <p
-                    className={`text-sm font-semibold transition-colors ${
-                      step >= s.n
-                        ? "text-gray-900 dark:text-white"
-                        : "text-gray-500 dark:text-gray-500"
+              {
+                n: 3,
+                label: "Your class code",
+                desc: "Share with classmates",
+              },
+            ]
+              .filter((s) => role !== "STUDENT" || s.n !== 3)
+              .map((s) => (
+                <div key={s.n} className="flex items-center gap-4">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 transition-all duration-300 ${
+                      step > s.n
+                        ? "bg-emerald-500 text-white"
+                        : step === s.n
+                          ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30"
+                          : "bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-500"
                     }`}
                   >
-                    {s.label}
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-500 text-xs">
-                    {s.desc}
-                  </p>
+                    {step > s.n ? <CheckCircle2 className="w-4 h-4" /> : s.n}
+                  </div>
+                  <div>
+                    <p
+                      className={`text-sm font-semibold transition-colors ${
+                        step >= s.n
+                          ? "text-gray-900 dark:text-white"
+                          : "text-gray-500 dark:text-gray-500"
+                      }`}
+                    >
+                      {s.label}
+                    </p>
+                    <p className="text-gray-500 dark:text-gray-500 text-xs">
+                      {s.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
 
@@ -833,6 +846,105 @@ export default function RegisterPage() {
                       )}
                     </motion.button>
                   </div>
+                </motion.div>
+              )}
+
+              {/* ── Step 3 — Class Code Success (Course Rep only) ── */}
+              {step === 3 && classCodeGenerated && (
+                <motion.div
+                  key="step3-success"
+                  variants={slideIn}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="space-y-6 text-center"
+                >
+                  {/* Success icon */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
+                    className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/30"
+                  >
+                    <CheckCircle2 className="w-10 h-10 text-white" />
+                  </motion.div>
+
+                  <div>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">
+                      Class Created! 🎉
+                    </h2>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                      Your class space is ready. Share this code with your
+                      classmates so they can join.
+                    </p>
+                  </div>
+
+                  {/* Class code display */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-3xl p-6">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-3">
+                      Your Class Code
+                    </p>
+                    <p className="text-4xl font-black font-mono tracking-widest text-blue-700 dark:text-blue-300 mb-4">
+                      {classCodeGenerated}
+                    </p>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(classCodeGenerated);
+                        toast.success(
+                          "Class code copied! Share it on your class WhatsApp group 📱",
+                        );
+                      }}
+                      className="flex items-center gap-2 mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-blue-200 dark:shadow-blue-900/30"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy Code
+                    </motion.button>
+                  </div>
+
+                  {/* How to share */}
+                  <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-left">
+                    <p className="text-gray-700 dark:text-gray-300 font-bold text-sm mb-3">
+                      How to get students to join:
+                    </p>
+                    <div className="space-y-2">
+                      {[
+                        "Copy the class code above",
+                        "Share it on your class WhatsApp group",
+                        "Students register and enter the code to join",
+                        "You'll see them appear in your Members page",
+                      ].map((step, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {i + 1}
+                          </div>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs">
+                            {step}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{
+                      scale: 1.02,
+                      boxShadow: "0 20px 40px rgba(34,211,238,0.25)",
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => router.push("/dashboard")}
+                    className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-base flex items-center justify-center gap-3 shadow-xl shadow-cyan-500/20"
+                  >
+                    Go to My Dashboard
+                    <ArrowRight className="w-5 h-5" />
+                  </motion.button>
+
+                  <p className="text-gray-400 dark:text-gray-600 text-xs">
+                    Your code is also visible on your dashboard anytime
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>
