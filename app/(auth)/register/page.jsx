@@ -24,7 +24,7 @@ import {
   Search,
   Loader2,
   Building,
-  Copy, // ← add Copy here
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
@@ -136,7 +136,6 @@ export default function RegisterPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [classConfirmed, setClassConfirmed] = useState(false);
-  // Add this state at the top with other states
   const [classCodeGenerated, setClassCodeGenerated] = useState(null);
 
   const {
@@ -146,6 +145,16 @@ export default function RegisterPage() {
     trigger,
     formState: { errors },
   } = useForm();
+
+  // Calculate total steps based on role
+  const getTotalSteps = () => {
+    if (role === "STUDENT") return 2; // Students only have 2 steps
+    if (role === "COURSE_REP") return 3; // Course reps have 3 steps
+    return 2; // Default before role selection
+  };
+
+  const totalSteps = getTotalSteps();
+  const progress = (step / totalSteps) * 100;
 
   const goStep2 = async () => {
     const valid = await trigger(["name", "email", "studentId", "password"]);
@@ -222,7 +231,6 @@ export default function RegisterPage() {
       setAuth(user, token);
 
       if (role === "COURSE_REP") {
-        // Show class code screen before redirecting
         setClassCodeGenerated(user.classCode);
         setStep(3);
       } else {
@@ -236,8 +244,28 @@ export default function RegisterPage() {
     }
   };
 
-  const totalSteps = 3;
-  const progress = (step / totalSteps) * 100;
+  // Get step information for left panel
+  const getStepInfo = () => {
+    if (role === "STUDENT") {
+      return [
+        { n: 1, label: "Your account", desc: "Name, email, student ID" },
+        { n: 2, label: "Join your class", desc: "Enter your class code" },
+      ];
+    }
+    if (role === "COURSE_REP") {
+      return [
+        { n: 1, label: "Your account", desc: "Name, email, student ID" },
+        { n: 2, label: "Set up your class", desc: "Create your class space" },
+        { n: 3, label: "Your class code", desc: "Share with classmates" },
+      ];
+    }
+    return [
+      { n: 1, label: "Your account", desc: "Name, email, student ID" },
+      { n: 2, label: "Complete setup", desc: "Role-specific details" },
+    ];
+  };
+
+  const stepInfo = getStepInfo();
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex overflow-hidden">
@@ -286,55 +314,35 @@ export default function RegisterPage() {
 
           {/* Step indicators */}
           <div className="space-y-4">
-            {[
-              { n: 1, label: "Your account", desc: "Name, email, student ID" },
-              {
-                n: 2,
-                label:
-                  role === "COURSE_REP"
-                    ? "Set up your class"
-                    : "Join your class",
-                desc:
-                  role === "COURSE_REP"
-                    ? "Create your class space"
-                    : "Enter your class code",
-              },
-              {
-                n: 3,
-                label: "Your class code",
-                desc: "Share with classmates",
-              },
-            ]
-              .filter((s) => role !== "STUDENT" || s.n !== 3)
-              .map((s) => (
-                <div key={s.n} className="flex items-center gap-4">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 transition-all duration-300 ${
-                      step > s.n
-                        ? "bg-emerald-500 text-white"
-                        : step === s.n
-                          ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30"
-                          : "bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-500"
+            {stepInfo.map((s) => (
+              <div key={s.n} className="flex items-center gap-4">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 transition-all duration-300 ${
+                    step > s.n
+                      ? "bg-emerald-500 text-white"
+                      : step === s.n
+                        ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30"
+                        : "bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-500"
+                  }`}
+                >
+                  {step > s.n ? <CheckCircle2 className="w-4 h-4" /> : s.n}
+                </div>
+                <div>
+                  <p
+                    className={`text-sm font-semibold transition-colors ${
+                      step >= s.n
+                        ? "text-gray-900 dark:text-white"
+                        : "text-gray-500 dark:text-gray-500"
                     }`}
                   >
-                    {step > s.n ? <CheckCircle2 className="w-4 h-4" /> : s.n}
-                  </div>
-                  <div>
-                    <p
-                      className={`text-sm font-semibold transition-colors ${
-                        step >= s.n
-                          ? "text-gray-900 dark:text-white"
-                          : "text-gray-500 dark:text-gray-500"
-                      }`}
-                    >
-                      {s.label}
-                    </p>
-                    <p className="text-gray-500 dark:text-gray-500 text-xs">
-                      {s.desc}
-                    </p>
-                  </div>
+                    {s.label}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-500 text-xs">
+                    {s.desc}
+                  </p>
                 </div>
-              ))}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -379,24 +387,26 @@ export default function RegisterPage() {
             </span>
           </div>
 
-          {/* Progress bar */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-500 dark:text-gray-400 text-sm">
-                Step {step} of {totalSteps}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400 text-sm">
-                {Math.round(progress)}%
-              </span>
+          {/* Progress bar - now dynamic based on role */}
+          {role && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Step {step} of {totalSteps}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  {Math.round(progress)}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.4 }}
+                />
+              </div>
             </div>
-            <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600"
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.4 }}
-              />
-            </div>
-          </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <AnimatePresence mode="wait">
