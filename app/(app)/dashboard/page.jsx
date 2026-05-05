@@ -1,7 +1,7 @@
 // app/(app)/dashboard/page.jsx
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/axios";
@@ -29,13 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import useAuthStore from "@/store/authStore";
 
@@ -136,6 +130,7 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
   );
 }
 
+// ── Desktop Sidebar ─────────────────────────────────────────
 function DesktopSidebar({ user, isRep, pathname }) {
   const router = useRouter();
   const { logout } = useAuthStore();
@@ -149,11 +144,11 @@ function DesktopSidebar({ user, isRep, pathname }) {
       .slice(0, 2) || "U";
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-50 hidden w-72 lg:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+    <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 lg:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-8">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+        <div className="flex items-center gap-2 px-6 py-6">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
             <Zap className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -167,10 +162,10 @@ function DesktopSidebar({ user, isRep, pathname }) {
         </div>
 
         {/* User Info */}
-        <div className="mx-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
+        <div className="mx-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
+            <Avatar className="w-9 h-9">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -186,7 +181,7 @@ function DesktopSidebar({ user, isRep, pathname }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-6 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1">
           {links.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -194,13 +189,13 @@ function DesktopSidebar({ user, isRep, pathname }) {
               <button
                 key={link.href}
                 onClick={() => router.push(link.href)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                   isActive
-                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
+                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-4 h-4" />
                 <span className="text-sm">{link.label}</span>
               </button>
             );
@@ -208,10 +203,10 @@ function DesktopSidebar({ user, isRep, pathname }) {
         </nav>
 
         {/* Logout */}
-        <div className="p-4 mx-3 mb-6 rounded-xl border border-gray-200 dark:border-gray-800">
+        <div className="p-3 mx-3 mb-6 rounded-lg border border-gray-200 dark:border-gray-800">
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span className="text-sm font-medium">Logout</span>
@@ -222,6 +217,7 @@ function DesktopSidebar({ user, isRep, pathname }) {
   );
 }
 
+// ── Mobile Menu Button ──────────────────────────────────────
 function MobileMenuButton({ isRep, pathname }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -243,12 +239,12 @@ function MobileMenuButton({ isRep, pathname }) {
           <Menu className="w-5 h-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 p-0 bg-white dark:bg-gray-950">
+      <SheetContent side="left" className="w-64 p-0 bg-white dark:bg-gray-950">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-6">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+          <div className="flex items-center justify-between px-5 py-5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <div>
@@ -260,21 +256,16 @@ function MobileMenuButton({ isRep, pathname }) {
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setOpen(false)}
-              className="p-2"
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            <button onClick={() => setOpen(false)} className="p-1">
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
           </div>
 
           {/* User Info */}
-          <div className="mx-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
+          <div className="mx-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3">
-              <Avatar className="w-10 h-10">
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
+              <Avatar className="w-9 h-9">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -290,7 +281,7 @@ function MobileMenuButton({ isRep, pathname }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-6 space-y-1">
+          <nav className="flex-1 px-3 py-4 space-y-1">
             {links.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
@@ -301,13 +292,13 @@ function MobileMenuButton({ isRep, pathname }) {
                     router.push(link.href);
                     setOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                     isActive
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                   <span className="text-sm">{link.label}</span>
                 </button>
               );
@@ -315,13 +306,13 @@ function MobileMenuButton({ isRep, pathname }) {
           </nav>
 
           {/* Logout */}
-          <div className="p-4 mx-3 mb-6 rounded-xl border border-gray-200 dark:border-gray-800">
+          <div className="p-3 mx-3 mb-6 rounded-lg border border-gray-200 dark:border-gray-800">
             <button
               onClick={() => {
                 logout();
                 setOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span className="text-sm font-medium">Logout</span>
@@ -333,6 +324,7 @@ function MobileMenuButton({ isRep, pathname }) {
   );
 }
 
+// ── Course Rep Dashboard (Working API) ──────────────────────
 function RepDashboard({ user }) {
   const router = useRouter();
 
@@ -422,18 +414,18 @@ function RepDashboard({ user }) {
             </div>
 
             {classSpace?.classCode && (
-              <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-2xl px-4 py-3 mb-5 w-fit">
+              <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-xl px-4 py-2 mb-5 w-fit">
                 <div>
                   <p className="text-blue-200 text-xs">Class Code</p>
-                  <p className="text-white font-black font-mono text-lg tracking-wider">
+                  <p className="text-white font-black font-mono text-base">
                     {classSpace.classCode}
                   </p>
                 </div>
                 <button
                   onClick={copyClassCode}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all"
+                  className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-all"
                 >
-                  <Copy className="w-4 h-4 text-white" />
+                  <Copy className="w-3.5 h-3.5 text-white" />
                 </button>
               </div>
             )}
@@ -442,14 +434,14 @@ function RepDashboard({ user }) {
               <Button
                 onClick={() => router.push("/sessions")}
                 variant="secondary"
-                className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm"
+                className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm text-sm"
               >
                 <PlayCircle className="w-4 h-4 mr-2" /> Start Session
               </Button>
               <Button
                 onClick={() => router.push("/courses")}
                 variant="outline"
-                className="bg-white/10 text-white border-white/30 hover:bg-white/20"
+                className="bg-white/10 text-white border-white/30 hover:bg-white/20 text-sm"
               >
                 <BookOpen className="w-4 h-4 mr-2" /> Courses
               </Button>
@@ -496,6 +488,7 @@ function RepDashboard({ user }) {
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Active Sessions */}
         <motion.div
           variants={fadeUp}
           custom={5}
@@ -520,7 +513,7 @@ function RepDashboard({ user }) {
               {isLoading ? (
                 <div className="py-6 space-y-3 px-4">
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-12 rounded-xl" />
+                    <Skeleton key={i} className="h-12 rounded-lg" />
                   ))}
                 </div>
               ) : openSessions.length === 0 ? (
@@ -531,7 +524,7 @@ function RepDashboard({ user }) {
                   </p>
                   <Button
                     size="sm"
-                    className="mt-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                    className="mt-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                     onClick={() => router.push("/sessions")}
                   >
                     Start one now
@@ -544,7 +537,7 @@ function RepDashboard({ user }) {
                     onClick={() => router.push(`/sessions/${session.id}`)}
                     className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                   >
-                    <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
                       <PlayCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -569,6 +562,7 @@ function RepDashboard({ user }) {
           </Card>
         </motion.div>
 
+        {/* Recent Activity */}
         <motion.div
           variants={fadeUp}
           custom={6}
@@ -655,6 +649,7 @@ function RepDashboard({ user }) {
   );
 }
 
+// ── Student Dashboard (Working API) ────────────────────────
 function StudentDashboard({ user }) {
   const router = useRouter();
 
@@ -698,7 +693,7 @@ function StudentDashboard({ user }) {
   const overallPct =
     totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : null;
 
-  const timeOfDay = () => {
+  const greeting = () => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
     if (h < 17) return "Good afternoon";
@@ -718,7 +713,7 @@ function StudentDashboard({ user }) {
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-2xl" />
           <CardContent className="relative z-10 p-6">
             <Badge className="bg-white/20 text-white border-none text-xs mb-3">
-              {timeOfDay()} 👋
+              {greeting()} 👋
             </Badge>
             <h2 className="text-2xl font-black text-white mb-1">
               {user?.name?.split(" ")[0]}
@@ -735,7 +730,7 @@ function StudentDashboard({ user }) {
                 <Button
                   onClick={() => router.push("/attendance")}
                   variant="secondary"
-                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm"
+                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm text-sm"
                 >
                   <MapPin className="w-4 h-4 mr-2" /> Mark Attendance
                   <Badge className="ml-2 bg-emerald-500 text-white border-none text-xs">
@@ -746,7 +741,7 @@ function StudentDashboard({ user }) {
                 <Button
                   onClick={() => router.push("/courses")}
                   variant="secondary"
-                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm"
+                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm text-sm"
                 >
                   <BookOpen className="w-4 h-4 mr-2" /> View Courses
                 </Button>
@@ -768,9 +763,9 @@ function StudentDashboard({ user }) {
             <div
               key={session.id}
               onClick={() => router.push("/attendance")}
-              className="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all"
+              className="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-xl p-4 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all"
             >
-              <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
                 <PlayCircle className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
@@ -815,7 +810,7 @@ function StudentDashboard({ user }) {
         />
         <StatCard
           label="Classmates"
-          value={classSpace?._count?.students || 0}
+          value={classSpace ? classSpace._count?.students || 0 : "—"}
           icon={Users}
           color="amber"
           delay={5}
@@ -957,24 +952,21 @@ function StudentDashboard({ user }) {
   );
 }
 
+// ── Main Dashboard Page ─────────────────────────────────────
 export default function DashboardPage() {
-  const { user, isRep, isStudent } = useAuth();
+  const { user, isCourseRep, isStudent } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
-  if (!user) {
-    router.push("/login");
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <>
-      {/* Desktop Sidebar - hidden on mobile */}
-      <DesktopSidebar user={user} isRep={isRep} pathname={pathname} />
+      {/* Desktop Sidebar */}
+      <DesktopSidebar user={user} isRep={isCourseRep} pathname={pathname} />
 
-      {/* Main Content - FULL WIDTH */}
-      <div className="lg:pl-72">
-        {/* Mobile Header with Menu Button */}
+      {/* Main Content */}
+      <div className="lg:pl-64">
+        {/* Mobile Header with Menu */}
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
@@ -985,13 +977,13 @@ export default function DashboardPage() {
                 Klassrep
               </span>
             </div>
-            <MobileMenuButton isRep={isRep} pathname={pathname} />
+            <MobileMenuButton isRep={isCourseRep} pathname={pathname} />
           </div>
         </div>
 
-        {/* Dashboard Content - No max-width restriction */}
+        {/* Dashboard Content */}
         <div className="p-4 md:p-6">
-          {isRep && <RepDashboard user={user} />}
+          {isCourseRep && <RepDashboard user={user} />}
           {isStudent && <StudentDashboard user={user} />}
         </div>
       </div>
