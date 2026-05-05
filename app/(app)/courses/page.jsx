@@ -15,10 +15,7 @@ import {
   Trash2,
   PlayCircle,
   Users,
-  Calendar,
-  Clock,
   ChevronRight,
-  X,
   Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,7 +51,7 @@ const fadeUp = {
 function CourseCard({ course, onEdit, onDelete }) {
   const router = useRouter();
   const sessionCount = course.sessions?.length || 0;
-  const studentCount = course._count?.enrollments || 0;
+  const studentCount = course._count?.sessions || 0;
 
   return (
     <motion.div
@@ -106,11 +103,7 @@ function CourseCard({ course, onEdit, onDelete }) {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                   <Users className="w-4 h-4" />
-                  <span>{studentCount} students</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                  <PlayCircle className="w-4 h-4" />
-                  <span>{sessionCount} sessions</span>
+                  <span>{studentCount} sessions</span>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -207,15 +200,18 @@ export default function CoursesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
 
-  // Fetch courses
-  const { data: courses, isLoading } = useQuery({
+  // Fetch courses - FIXED: access data.data.courses
+  const { data: response, isLoading } = useQuery({
     queryKey: ["rep-courses"],
     queryFn: async () => {
       const res = await api.get("/api/v1/courses");
-      return res.data.data || [];
+      return res.data.data; // This contains { courses: [], count: number }
     },
     enabled: !!user,
   });
+
+  // Extract courses array from response
+  const courses = response?.courses || [];
 
   // Delete course mutation
   const deleteMutation = useMutation({
@@ -231,7 +227,7 @@ export default function CoursesPage() {
     },
   });
 
-  const filteredCourses = courses?.filter(
+  const filteredCourses = courses.filter(
     (c) =>
       c.name?.toLowerCase().includes(search.toLowerCase()) ||
       c.code?.toLowerCase().includes(search.toLowerCase()),
@@ -285,7 +281,7 @@ export default function CoursesPage() {
             </Card>
           ))}
         </div>
-      ) : filteredCourses?.length === 0 ? (
+      ) : filteredCourses.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
