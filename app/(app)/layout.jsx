@@ -10,7 +10,8 @@ export default function AppLayout({ children }) {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <main className="pb-20 max-w-7xl mx-auto p-4">{children}</main>
+        {/* Remove max-w-7xl and mx-auto to allow full width */}
+        <main className="pb-20 p-4">{children}</main>
         <BottomTabBar />
       </div>
     </ProtectedRoute>

@@ -1,10 +1,12 @@
+// app/(app)/dashboard/page.jsx
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/axios";
 import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Users,
   BookOpen,
@@ -19,13 +21,21 @@ import {
   TrendingUp,
   GraduationCap,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 import useAuthStore from "@/store/authStore";
 
@@ -38,7 +48,6 @@ const fadeUp = {
   }),
 };
 
-// ── Sidebar Navigation Links ──────────────────────────────
 const sidebarLinks = {
   rep: [
     { label: "Dashboard", icon: Zap, href: "/dashboard" },
@@ -56,7 +65,6 @@ const sidebarLinks = {
   ],
 };
 
-// ── Stat Card ─────────────────────────────────────────────
 function StatCard({ label, value, icon: Icon, color, delay, loading }) {
   const colors = {
     blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
@@ -75,20 +83,20 @@ function StatCard({ label, value, icon: Icon, color, delay, loading }) {
       animate="visible"
     >
       <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-md transition-all">
-        <CardContent className="p-4 sm:p-5">
+        <CardContent className="p-4">
           <div
             className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${colors[color]}`}
           >
             <Icon className="w-5 h-5" />
           </div>
           {loading ? (
-            <Skeleton className="h-7 w-16 mb-1" />
+            <Skeleton className="h-7 w-16" />
           ) : (
-            <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">
+            <p className="text-2xl font-black text-gray-900 dark:text-white">
               {value}
             </p>
           )}
-          <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-0.5">
+          <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
             {label}
           </p>
         </CardContent>
@@ -97,7 +105,6 @@ function StatCard({ label, value, icon: Icon, color, delay, loading }) {
   );
 }
 
-// ── Activity Item ─────────────────────────────────────────
 function ActivityItem({ icon: Icon, title, sub, time, color }) {
   const colors = {
     green:
@@ -129,8 +136,7 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
   );
 }
 
-// ── Sidebar Component (Desktop Only) ───────────────────────
-function Sidebar({ user, isRep, pathname }) {
+function DesktopSidebar({ user, isRep, pathname }) {
   const router = useRouter();
   const { logout } = useAuthStore();
   const links = isRep ? sidebarLinks.rep : sidebarLinks.student;
@@ -143,7 +149,7 @@ function Sidebar({ user, isRep, pathname }) {
       .slice(0, 2) || "U";
 
   return (
-    <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/50 backdrop-blur-sm">
+    <aside className="fixed inset-y-0 left-0 z-50 hidden w-72 lg:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-8">
@@ -161,7 +167,7 @@ function Sidebar({ user, isRep, pathname }) {
         </div>
 
         {/* User Info */}
-        <div className="mx-3 p-4 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
+        <div className="mx-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <Avatar className="w-10 h-10">
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
@@ -191,7 +197,7 @@ function Sidebar({ user, isRep, pathname }) {
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
                   isActive
                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -216,7 +222,117 @@ function Sidebar({ user, isRep, pathname }) {
   );
 }
 
-// ── Rep Dashboard Content ─────────────────────────────────
+function MobileMenuButton({ isRep, pathname }) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const { logout } = useAuthStore();
+  const [open, setOpen] = useState(false);
+  const links = isRep ? sidebarLinks.rep : sidebarLinks.student;
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U";
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="sm" className="lg:hidden p-2">
+          <Menu className="w-5 h-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-72 p-0 bg-white dark:bg-gray-950">
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="flex items-center justify-between px-6 py-6">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="font-black text-gray-900 dark:text-white text-lg leading-none">
+                  Klassrep
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
+                  Smart Attendance
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpen(false)}
+              className="p-2"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* User Info */}
+          <div className="mx-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {isRep ? "Course Rep" : "Student"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-3 py-6 space-y-1">
+            {links.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <button
+                  key={link.href}
+                  onClick={() => {
+                    router.push(link.href);
+                    setOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                    isActive
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-sm">{link.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Logout */}
+          <div className="p-4 mx-3 mb-6 rounded-xl border border-gray-200 dark:border-gray-800">
+            <button
+              onClick={() => {
+                logout();
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 function RepDashboard({ user }) {
   const router = useRouter();
 
@@ -274,7 +390,7 @@ function RepDashboard({ user }) {
   };
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-6">
+    <div className="space-y-6 pb-20">
       {/* Hero */}
       <motion.div
         variants={fadeUp}
@@ -284,13 +400,13 @@ function RepDashboard({ user }) {
       >
         <Card className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 border-none shadow-xl">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-2xl" />
-          <CardContent className="relative z-10 p-6 sm:p-8">
-            <div className="flex items-start justify-between mb-4">
+          <CardContent className="relative z-10 p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
               <div>
                 <Badge className="bg-white/20 text-white border-none text-xs mb-3">
                   Course Rep 🎓
                 </Badge>
-                <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+                <h2 className="text-2xl font-black text-white">
                   {user?.name?.split(" ")[0]}'s Class
                 </h2>
                 <p className="text-blue-200 text-sm mt-1">
@@ -298,7 +414,7 @@ function RepDashboard({ user }) {
                 </p>
               </div>
               {openSessions.length > 0 && (
-                <Badge className="bg-emerald-500 text-white border-none font-bold flex-shrink-0">
+                <Badge className="bg-emerald-500 text-white border-none font-bold w-fit">
                   <span className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse inline-block" />
                   {openSessions.length} Live
                 </Badge>
@@ -333,7 +449,7 @@ function RepDashboard({ user }) {
               <Button
                 onClick={() => router.push("/courses")}
                 variant="outline"
-                className="bg-white/10 text-white border-white/30 hover:bg-white/20 font-semibold"
+                className="bg-white/10 text-white border-white/30 hover:bg-white/20"
               >
                 <BookOpen className="w-4 h-4 mr-2" /> Courses
               </Button>
@@ -343,7 +459,7 @@ function RepDashboard({ user }) {
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           label="Members"
           value={members.length}
@@ -380,7 +496,6 @@ function RepDashboard({ user }) {
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Active Sessions */}
         <motion.div
           variants={fadeUp}
           custom={5}
@@ -401,9 +516,9 @@ function RepDashboard({ user }) {
             </Button>
           </div>
           <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-            <CardContent className="p-0 px-4">
+            <CardContent className="p-0">
               {isLoading ? (
-                <div className="py-6 space-y-3">
+                <div className="py-6 space-y-3 px-4">
                   {[1, 2].map((i) => (
                     <Skeleton key={i} className="h-12 rounded-xl" />
                   ))}
@@ -416,7 +531,7 @@ function RepDashboard({ user }) {
                   </p>
                   <Button
                     size="sm"
-                    className="mt-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold"
+                    className="mt-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
                     onClick={() => router.push("/sessions")}
                   >
                     Start one now
@@ -427,7 +542,7 @@ function RepDashboard({ user }) {
                   <div
                     key={session.id}
                     onClick={() => router.push(`/sessions/${session.id}`)}
-                    className="flex items-center gap-3 py-3.5 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                   >
                     <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
                       <PlayCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -454,7 +569,6 @@ function RepDashboard({ user }) {
           </Card>
         </motion.div>
 
-        {/* Recent Activity */}
         <motion.div
           variants={fadeUp}
           custom={6}
@@ -541,7 +655,6 @@ function RepDashboard({ user }) {
   );
 }
 
-// ── Student Dashboard Content ─────────────────────────────
 function StudentDashboard({ user }) {
   const router = useRouter();
 
@@ -593,7 +706,7 @@ function StudentDashboard({ user }) {
   };
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-6">
+    <div className="space-y-6 pb-20">
       {/* Hero */}
       <motion.div
         variants={fadeUp}
@@ -603,11 +716,11 @@ function StudentDashboard({ user }) {
       >
         <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-blue-700 to-cyan-800 border-none shadow-xl">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-2xl" />
-          <CardContent className="relative z-10 p-6 sm:p-8">
+          <CardContent className="relative z-10 p-6">
             <Badge className="bg-white/20 text-white border-none text-xs mb-3">
               {timeOfDay()} 👋
             </Badge>
-            <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-1">
+            <h2 className="text-2xl font-black text-white mb-1">
               {user?.name?.split(" ")[0]}
             </h2>
             <p className="text-blue-200 text-sm mb-1">
@@ -675,7 +788,7 @@ function StudentDashboard({ user }) {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           label="Courses"
           value={classSpace?.courses?.length || "—"}
@@ -778,10 +891,7 @@ function StudentDashboard({ user }) {
                           className={`h-full rounded-full ${barColor[color]}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${Math.min(pct, 100)}%` }}
-                          transition={{
-                            duration: 0.8,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
+                          transition={{ duration: 0.8 }}
                         />
                       </div>
                       <div className="flex items-center justify-between mt-1.5">
@@ -847,7 +957,6 @@ function StudentDashboard({ user }) {
   );
 }
 
-// ── Main Dashboard Page ───────────────────────────────────
 export default function DashboardPage() {
   const { user, isRep, isStudent } = useAuth();
   const pathname = usePathname();
@@ -859,20 +968,33 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Desktop Sidebar */}
-      <Sidebar user={user} isRep={isRep} pathname={pathname} />
+    <>
+      {/* Desktop Sidebar - hidden on mobile */}
+      <DesktopSidebar user={user} isRep={isRep} pathname={pathname} />
 
-      {/* Main Content - Desktop with margin, Mobile without */}
-      <div className="lg:ml-72">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+      {/* Main Content - FULL WIDTH */}
+      <div className="lg:pl-72">
+        {/* Mobile Header with Menu Button */}
+        <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 lg:hidden">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-black text-gray-900 dark:text-white">
+                Klassrep
+              </span>
+            </div>
+            <MobileMenuButton isRep={isRep} pathname={pathname} />
+          </div>
+        </div>
+
+        {/* Dashboard Content - No max-width restriction */}
+        <div className="p-4 md:p-6">
           {isRep && <RepDashboard user={user} />}
           {isStudent && <StudentDashboard user={user} />}
         </div>
       </div>
-
-      {/* Mobile Bottom Tab Bar - Uses your existing layout's BottomTabBar */}
-      {/* The BottomTabBar is already in your app/(app)/layout.jsx */}
-    </div>
+    </>
   );
 }
