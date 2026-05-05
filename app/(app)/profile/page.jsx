@@ -240,7 +240,7 @@ export default function ProfilePage() {
                 <Badge
                   className={`mt-3 ${config.badge} border-0 font-semibold`}
                 >
-                  {isRep ? "Course Rep" : "Student"}
+                  {isCourseRep ? "Course Rep" : "Student"}
                 </Badge>
 
                 <Separator className="my-4 bg-gray-200 dark:bg-gray-700" />
