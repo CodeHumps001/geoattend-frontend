@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
@@ -44,39 +44,48 @@ const fadeUp = {
   }),
 };
 
-function AttendanceRow({ student }) {
-  const isPresent = student.status === "PRESENT";
+function AttendanceRow({ record }) {
+  const isPresent = record?.status === "PRESENT";
+  const student = record?.student;
+  const user = student?.user;
+
   const initials =
-    student.user?.name
+    user?.name
       ?.split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2) || "S";
 
+  const studentCode = user?.studentId || "N/A";
+
   return (
     <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
       <div className="flex items-center gap-3">
         <Avatar className="w-8 h-8">
           <AvatarFallback
-            className={`text-xs font-bold ${isPresent ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"}`}
+            className={`text-xs font-bold ${
+              isPresent
+                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+            }`}
           >
             {initials}
           </AvatarFallback>
         </Avatar>
         <div>
           <p className="font-semibold text-gray-900 dark:text-white text-sm">
-            {student.user?.name}
+            {user?.name || "Unknown"}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {student.studentCode}
+            {studentCode}
           </p>
         </div>
       </div>
       <div className="flex items-center gap-4">
-        {student.latitude && student.longitude && (
+        {record?.latitude && record?.longitude && (
           <div className="hidden sm:block text-xs text-gray-500 dark:text-gray-400 font-mono">
-            {student.latitude.toFixed(4)}, {student.longitude.toFixed(4)}
+            {record.latitude.toFixed(4)}, {record.longitude.toFixed(4)}
           </div>
         )}
         <Badge
@@ -126,16 +135,18 @@ export default function SessionDetailPage() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch session details with real-time updates
-  const { data: session, isLoading } = useQuery({
+  // Fetch session details - matches backend response structure
+  const { data: response, isLoading } = useQuery({
     queryKey: ["session", id],
     queryFn: async () => {
       const res = await api.get(`/api/v1/sessions/${id}`);
-      return res.data.data;
+      return res.data.data; // { session: {...} }
     },
     enabled: !!id,
-    refetchInterval: 10000, // Refresh every 10 seconds for live updates
+    refetchInterval: 10000,
   });
+
+  const session = response?.session;
 
   const refreshData = async () => {
     setRefreshing(true);
@@ -158,13 +169,13 @@ export default function SessionDetailPage() {
       "Latitude",
       "Longitude",
     ];
-    const rows = session.attendance.map((a) => [
-      a.student?.user?.name || "N/A",
-      a.student?.studentCode || "N/A",
-      a.status,
-      new Date(a.markedAt).toLocaleString(),
-      a.latitude?.toFixed(6) || "N/A",
-      a.longitude?.toFixed(6) || "N/A",
+    const rows = session.attendance.map((record) => [
+      record.student?.user?.name || "N/A",
+      record.student?.user?.studentId || "N/A",
+      record.status,
+      new Date(record.markedAt).toLocaleString(),
+      record.latitude?.toFixed(6) || "N/A",
+      record.longitude?.toFixed(6) || "N/A",
     ]);
 
     const csvContent = [headers, ...rows]
@@ -180,7 +191,7 @@ export default function SessionDetailPage() {
     toast.success("Attendance exported");
   };
 
-  const copyClassCode = () => {
+  const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Link copied to clipboard");
   };
@@ -204,10 +215,7 @@ export default function SessionDetailPage() {
     );
   }
 
-  const now = new Date();
-  const start = new Date(session.startTime);
-  const end = new Date(session.endTime);
-  const isLive = now >= start && now <= end;
+  const isLive = session.isOpen;
   const attendance = session.attendance || [];
   const presentCount = attendance.filter((a) => a.status === "PRESENT").length;
   const absentCount = attendance.filter((a) => a.status === "ABSENT").length;
@@ -252,11 +260,6 @@ export default function SessionDetailPage() {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-                {" - "}
-                {new Date(session.endTime).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" />
@@ -288,7 +291,7 @@ export default function SessionDetailPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={copyClassCode}>
+              <DropdownMenuItem onClick={copyLink}>
                 <Copy className="w-4 h-4 mr-2" /> Copy Link
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -375,8 +378,8 @@ export default function SessionDetailPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {attendance.map((student, i) => (
-                    <AttendanceRow key={student.id || i} student={student} />
+                  {attendance.map((record) => (
+                    <AttendanceRow key={record.id} record={record} />
                   ))}
                 </div>
               )}
@@ -395,8 +398,8 @@ export default function SessionDetailPage() {
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
                   {attendance
                     .filter((a) => a.status === "PRESENT")
-                    .map((student, i) => (
-                      <AttendanceRow key={student.id || i} student={student} />
+                    .map((record) => (
+                      <AttendanceRow key={record.id} record={record} />
                     ))}
                 </div>
               )}
@@ -415,8 +418,8 @@ export default function SessionDetailPage() {
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
                   {attendance
                     .filter((a) => a.status === "ABSENT")
-                    .map((student, i) => (
-                      <AttendanceRow key={student.id || i} student={student} />
+                    .map((record) => (
+                      <AttendanceRow key={record.id} record={record} />
                     ))}
                 </div>
               )}
