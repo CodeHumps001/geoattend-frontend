@@ -37,7 +37,6 @@ const fadeUp = {
 
 function SessionCard({ session, onMark, marking, attendanceStatus }) {
   const isActive = session.isOpen;
-  const isEnded = !session.isOpen;
   const hasAttended = attendanceStatus !== null;
   const isPresent = attendanceStatus === "PRESENT";
 
@@ -60,7 +59,7 @@ function SessionCard({ session, onMark, marking, attendanceStatus }) {
                     LIVE NOW
                   </Badge>
                 )}
-                {isEnded && <Badge variant="secondary">Ended</Badge>}
+                {!isActive && <Badge variant="secondary">Ended</Badge>}
               </div>
               <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">
                 {session.course?.name}
@@ -71,7 +70,7 @@ function SessionCard({ session, onMark, marking, attendanceStatus }) {
               <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {new Date(session.startTime).toLocaleDateString()}
+                  {new Date(session.date).toLocaleDateString()}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
@@ -175,63 +174,67 @@ export default function AttendancePage() {
 
   const studentId = user?.student?.id;
 
-  // Fetch student's enrolled courses
+  // 1. Fetch student's profile with enrollments
   const { data: student, isLoading: studentLoading } = useQuery({
     queryKey: ["student-profile", studentId],
     queryFn: async () => {
       const res = await api.get(`/api/v1/students/${studentId}`);
+      console.log("Student profile:", res.data.data);
       return res.data.data;
     },
     enabled: !!studentId,
   });
 
+  // 2. Get enrolled course IDs
   const enrolledCourseIds = student?.enrollments?.map((e) => e.courseId) || [];
 
-  // Fetch all sessions - FIXED: extract from response.data.data.sessions
+  // 3. Fetch ALL sessions
   const { data: sessionsResponse, isLoading: sessionsLoading } = useQuery({
     queryKey: ["all-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/sessions");
+      console.log("Sessions response:", res.data.data);
       return res.data.data; // { sessions: [], count: number }
     },
     enabled: !!user,
     refetchInterval: 10000,
   });
 
-  // Extract sessions array
+  // 4. Filter sessions for enrolled courses ONLY
   const allSessions = sessionsResponse?.sessions || [];
-
-  // Filter sessions for enrolled courses only
-  const sessions = allSessions.filter((s) =>
-    enrolledCourseIds.includes(s.courseId),
+  const mySessions = allSessions.filter((session) =>
+    enrolledCourseIds.includes(session.courseId),
   );
 
-  // Fetch attendance status for each session using the correct endpoint
-  const { data: attendanceStatuses, refetch: refetchStatuses } = useQuery({
-    queryKey: ["attendance-statuses", studentId],
+  console.log("Enrolled course IDs:", enrolledCourseIds);
+  console.log("All sessions:", allSessions);
+  console.log("My sessions:", mySessions);
+
+  // 5. Fetch my attendance history (using the /me endpoint)
+  const { data: myAttendance, refetch: refetchAttendance } = useQuery({
+    queryKey: ["my-attendance", studentId],
     queryFn: async () => {
-      if (!studentId || !sessions?.length) return {};
-      const statuses = {};
-      for (const session of sessions) {
-        try {
-          // Use the correct endpoint for student attendance per course
-          const res = await api.get(
-            `/api/v1/attendance/student/${studentId}/course/${session.courseId}`,
-          );
-          if (res.data.data?.stats?.percentage) {
-            const percentage = parseFloat(res.data.data.stats.percentage);
-            statuses[session.id] = percentage > 0 ? "PRESENT" : "ABSENT";
-          } else {
-            statuses[session.id] = null;
-          }
-        } catch (err) {
-          statuses[session.id] = null;
-        }
-      }
-      return statuses;
+      const res = await api.get("/api/v1/attendance/me");
+      console.log("My attendance response:", res.data.data);
+      return res.data.data;
     },
-    enabled: !!studentId && sessions?.length > 0,
+    enabled: !!studentId,
   });
+
+  // Create a map of sessionId -> status from attendance records
+  const attendanceMap = new Map();
+  myAttendance?.attendance?.forEach((record) => {
+    attendanceMap.set(record.sessionId, record.status);
+  });
+
+  // Separate active vs ended sessions
+  const activeSessions = mySessions.filter((s) => s.isOpen === true);
+  const endedSessions = mySessions.filter((s) => s.isOpen === false);
+
+  const totalSessions = mySessions.length;
+  const totalPresent = myAttendance?.totalPresent || 0;
+  const attendanceRate =
+    totalSessions > 0 ? (totalPresent / totalSessions) * 100 : 0;
 
   const markAttendance = async (sessionId) => {
     setMarking(sessionId);
@@ -252,15 +255,19 @@ export default function AttendancePage() {
       const { latitude, longitude, accuracy } = position.coords;
       setLocationStatus({ latitude, longitude, accuracy });
 
+      console.log("Marking attendance for session:", sessionId);
+      console.log("Location:", { latitude, longitude });
+
       const res = await api.post("/api/v1/attendance/mark", {
         sessionId,
         latitude,
         longitude,
       });
 
+      console.log("Mark attendance response:", res.data);
       const result = res.data.data;
 
-      await refetchStatuses();
+      await refetchAttendance();
       queryClient.invalidateQueries(["all-sessions"]);
 
       if (result.status === "PRESENT") {
@@ -271,6 +278,7 @@ export default function AttendancePage() {
         );
       }
     } catch (err) {
+      console.error("Mark attendance error:", err);
       if (err.code === 1 || err.code === "PERMISSION_DENIED") {
         toast.error("Location access denied. Please enable location services.");
       } else if (err.code === 2 || err.code === "POSITION_UNAVAILABLE") {
@@ -285,16 +293,6 @@ export default function AttendancePage() {
       setTimeout(() => setLocationStatus(null), 3000);
     }
   };
-
-  const activeSessions = sessions.filter((s) => s.isOpen === true);
-  const endedSessions = sessions.filter((s) => s.isOpen === false);
-
-  const totalSessions = sessions.length;
-  const totalPresent = Object.values(attendanceStatuses || {}).filter(
-    (s) => s === "PRESENT",
-  ).length;
-  const attendanceRate =
-    totalSessions > 0 ? (totalPresent / totalSessions) * 100 : 0;
 
   const isLoading = studentLoading || sessionsLoading;
 
@@ -381,13 +379,13 @@ export default function AttendancePage() {
             Live Sessions
           </h2>
           <div className="space-y-4">
-            {activeSessions.map((session, i) => (
+            {activeSessions.map((session) => (
               <SessionCard
                 key={session.id}
                 session={session}
                 onMark={markAttendance}
                 marking={marking}
-                attendanceStatus={attendanceStatuses?.[session.id] || null}
+                attendanceStatus={attendanceMap.get(session.id) || null}
               />
             ))}
           </div>
@@ -402,13 +400,13 @@ export default function AttendancePage() {
             Past Sessions
           </h2>
           <div className="space-y-4">
-            {endedSessions.map((session, i) => (
+            {endedSessions.map((session) => (
               <SessionCard
                 key={session.id}
                 session={session}
                 onMark={markAttendance}
                 marking={marking}
-                attendanceStatus={attendanceStatuses?.[session.id] || null}
+                attendanceStatus={attendanceMap.get(session.id) || null}
               />
             ))}
           </div>
@@ -416,7 +414,7 @@ export default function AttendancePage() {
       )}
 
       {/* Empty State */}
-      {!isLoading && sessions.length === 0 && (
+      {!isLoading && mySessions.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
