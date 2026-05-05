@@ -70,7 +70,7 @@ function SessionCard({ session, onMark, marking, attendanceStatus }) {
               <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {new Date(session.date).toLocaleDateString()}
+                  {new Date(session.startTime).toLocaleDateString()}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
@@ -167,71 +167,43 @@ function SessionCard({ session, onMark, marking, attendanceStatus }) {
 
 export default function AttendancePage() {
   const { user } = useAuth();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [marking, setMarking] = useState(null);
   const [locationStatus, setLocationStatus] = useState(null);
 
-  const studentId = user?.student?.id;
-
-  // 1. Fetch student's profile with enrollments
-  const { data: student, isLoading: studentLoading } = useQuery({
-    queryKey: ["student-profile", studentId],
-    queryFn: async () => {
-      const res = await api.get(`/api/v1/students/${studentId}`);
-      console.log("Student profile:", res.data.data);
-      return res.data.data;
-    },
-    enabled: !!studentId,
-  });
-
-  // 2. Get enrolled course IDs
-  const enrolledCourseIds = student?.enrollments?.map((e) => e.courseId) || [];
-
-  // 3. Fetch ALL sessions
+  // Fetch sessions - backend now correctly filters by student's class space
   const { data: sessionsResponse, isLoading: sessionsLoading } = useQuery({
-    queryKey: ["all-sessions"],
+    queryKey: ["student-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/sessions");
       console.log("Sessions response:", res.data.data);
-      return res.data.data; // { sessions: [], count: number }
+      return res.data.data;
     },
     enabled: !!user,
     refetchInterval: 10000,
   });
 
-  // 4. Filter sessions for enrolled courses ONLY
-  const allSessions = sessionsResponse?.sessions || [];
-  const mySessions = allSessions.filter((session) =>
-    enrolledCourseIds.includes(session.courseId),
-  );
+  const sessions = sessionsResponse?.sessions || [];
 
-  console.log("Enrolled course IDs:", enrolledCourseIds);
-  console.log("All sessions:", allSessions);
-  console.log("My sessions:", mySessions);
-
-  // 5. Fetch my attendance history (using the /me endpoint)
+  // Fetch my attendance history
   const { data: myAttendance, refetch: refetchAttendance } = useQuery({
-    queryKey: ["my-attendance", studentId],
+    queryKey: ["my-attendance"],
     queryFn: async () => {
       const res = await api.get("/api/v1/attendance/me");
-      console.log("My attendance response:", res.data.data);
       return res.data.data;
     },
-    enabled: !!studentId,
+    enabled: !!user,
   });
 
-  // Create a map of sessionId -> status from attendance records
   const attendanceMap = new Map();
   myAttendance?.attendance?.forEach((record) => {
     attendanceMap.set(record.sessionId, record.status);
   });
 
-  // Separate active vs ended sessions
-  const activeSessions = mySessions.filter((s) => s.isOpen === true);
-  const endedSessions = mySessions.filter((s) => s.isOpen === false);
+  const activeSessions = sessions.filter((s) => s.isOpen === true);
+  const endedSessions = sessions.filter((s) => s.isOpen === false);
 
-  const totalSessions = mySessions.length;
+  const totalSessions = sessions.length;
   const totalPresent = myAttendance?.totalPresent || 0;
   const attendanceRate =
     totalSessions > 0 ? (totalPresent / totalSessions) * 100 : 0;
@@ -255,20 +227,16 @@ export default function AttendancePage() {
       const { latitude, longitude, accuracy } = position.coords;
       setLocationStatus({ latitude, longitude, accuracy });
 
-      console.log("Marking attendance for session:", sessionId);
-      console.log("Location:", { latitude, longitude });
-
       const res = await api.post("/api/v1/attendance/mark", {
         sessionId,
         latitude,
         longitude,
       });
 
-      console.log("Mark attendance response:", res.data);
       const result = res.data.data;
 
       await refetchAttendance();
-      queryClient.invalidateQueries(["all-sessions"]);
+      queryClient.invalidateQueries(["student-sessions"]);
 
       if (result.status === "PRESENT") {
         toast.success(`✅ Present! ${result.distance} from class.`);
@@ -278,7 +246,6 @@ export default function AttendancePage() {
         );
       }
     } catch (err) {
-      console.error("Mark attendance error:", err);
       if (err.code === 1 || err.code === "PERMISSION_DENIED") {
         toast.error("Location access denied. Please enable location services.");
       } else if (err.code === 2 || err.code === "POSITION_UNAVAILABLE") {
@@ -294,19 +261,17 @@ export default function AttendancePage() {
     }
   };
 
-  const isLoading = studentLoading || sessionsLoading;
-
-  if (!studentId && !isLoading) {
+  if (!user && !sessionsLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <Card className="max-w-md">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Student Profile Not Found
+              Please log in
             </h2>
             <p className="text-gray-500">
-              Please contact your course rep to set up your profile.
+              You need to be logged in to view attendance.
             </p>
           </CardContent>
         </Card>
@@ -316,7 +281,6 @@ export default function AttendancePage() {
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Header */}
       <div className="text-center mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Mark Attendance
@@ -327,7 +291,6 @@ export default function AttendancePage() {
         </p>
       </div>
 
-      {/* Stats Overview */}
       {totalSessions > 0 && (
         <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border-0">
           <CardContent className="p-4">
@@ -356,7 +319,6 @@ export default function AttendancePage() {
         </Card>
       )}
 
-      {/* GPS Status */}
       {locationStatus && (
         <Card className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
           <CardContent className="p-3">
@@ -371,7 +333,6 @@ export default function AttendancePage() {
         </Card>
       )}
 
-      {/* Active Sessions */}
       {activeSessions.length > 0 && (
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -392,7 +353,6 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* Ended Sessions */}
       {endedSessions.length > 0 && (
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -413,8 +373,7 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* Empty State */}
-      {!isLoading && mySessions.length === 0 && (
+      {!sessionsLoading && sessions.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
@@ -428,8 +387,7 @@ export default function AttendancePage() {
         </Card>
       )}
 
-      {/* Loading State */}
-      {isLoading && (
+      {sessionsLoading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
         </div>
