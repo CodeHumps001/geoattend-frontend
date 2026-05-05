@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/axios";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Users,
   BookOpen,
@@ -18,12 +18,16 @@ import {
   Copy,
   TrendingUp,
   GraduationCap,
+  LogOut,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import useAuthStore from "@/store/authStore";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -32,6 +36,24 @@ const fadeUp = {
     y: 0,
     transition: { duration: 0.5, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] },
   }),
+};
+
+// ── Sidebar Navigation Links ──────────────────────────────
+const sidebarLinks = {
+  rep: [
+    { label: "Dashboard", icon: Zap, href: "/dashboard" },
+    { label: "Courses", icon: BookOpen, href: "/courses" },
+    { label: "Sessions", icon: PlayCircle, href: "/sessions" },
+    { label: "Members", icon: Users, href: "/members" },
+    { label: "Profile", icon: GraduationCap, href: "/profile" },
+  ],
+  student: [
+    { label: "Dashboard", icon: Zap, href: "/dashboard" },
+    { label: "Courses", icon: BookOpen, href: "/courses" },
+    { label: "Attendance", icon: MapPin, href: "/attendance" },
+    { label: "History", icon: Clock, href: "/history" },
+    { label: "Profile", icon: GraduationCap, href: "/profile" },
+  ],
 };
 
 // ── Stat Card ─────────────────────────────────────────────
@@ -86,7 +108,7 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
       "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
   };
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-gray-50 dark:border-gray-800 last:border-0">
+    <div className="flex items-center gap-3 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
       <div
         className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${colors[color]}`}
       >
@@ -96,7 +118,7 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
         <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
           {title}
         </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
           {sub}
         </p>
       </div>
@@ -107,7 +129,94 @@ function ActivityItem({ icon: Icon, title, sub, time, color }) {
   );
 }
 
-// ── Course Rep Dashboard ───────────────────────────────────
+// ── Sidebar Component (Desktop Only) ───────────────────────
+function Sidebar({ user, isRep, pathname }) {
+  const router = useRouter();
+  const { logout } = useAuthStore();
+  const links = isRep ? sidebarLinks.rep : sidebarLinks.student;
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U";
+
+  return (
+    <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/50 backdrop-blur-sm">
+      <div className="flex flex-col h-full">
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-6 py-8">
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="font-black text-gray-900 dark:text-white text-lg leading-none">
+              Klassrep
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
+              Smart Attendance
+            </p>
+          </div>
+        </div>
+
+        {/* User Info */}
+        <div className="mx-3 p-4 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                {user?.name}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {isRep ? "Course Rep" : "Student"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-6 space-y-1">
+          {links.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href;
+            return (
+              <button
+                key={link.href}
+                onClick={() => router.push(link.href)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                  isActive
+                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-sm">{link.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Logout */}
+        <div className="p-4 mx-3 mb-6 rounded-xl border border-gray-200 dark:border-gray-800">
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm font-medium">Logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ── Rep Dashboard Content ─────────────────────────────────
 function RepDashboard({ user }) {
   const router = useRouter();
 
@@ -124,7 +233,7 @@ function RepDashboard({ user }) {
     queryKey: ["rep-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/sessions");
-      return res.data.data.sessions;
+      return res.data.data.sessions || [];
     },
     enabled: !!user,
     refetchInterval: 15000,
@@ -135,23 +244,19 @@ function RepDashboard({ user }) {
   const members = classSpace?.students || [];
   const sessions = sessionsData || [];
 
-  const now = new Date();
   const openSessions = sessions.filter((s) => s.isOpen);
-  const totalAttendance = sessions.reduce(
-    (acc, s) => acc + (s.attendance?.length || 0),
-    0,
-  );
-  const totalPresent = sessions.reduce(
-    (acc, s) =>
-      acc + (s.attendance?.filter((a) => a.status === "PRESENT").length || 0),
-    0,
-  );
+  let totalAttendance = 0;
+  let totalPresent = 0;
+  sessions.forEach((s) => {
+    totalAttendance += s.attendance?.length || 0;
+    totalPresent +=
+      s.attendance?.filter((a) => a.status === "PRESENT").length || 0;
+  });
   const avgAttendance =
     totalAttendance > 0
       ? Math.round((totalPresent / totalAttendance) * 100)
       : null;
 
-  // Recent activity from real sessions
   const recentActivity = sessions.slice(0, 4).map((s) => ({
     icon: s.isOpen ? PlayCircle : CheckCircle2,
     title: s.isOpen ? "Session active" : "Session completed",
@@ -169,7 +274,7 @@ function RepDashboard({ user }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 lg:pb-6">
       {/* Hero */}
       <motion.div
         variants={fadeUp}
@@ -200,7 +305,6 @@ function RepDashboard({ user }) {
               )}
             </div>
 
-            {/* Class Code */}
             {classSpace?.classCode && (
               <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-2xl px-4 py-3 mb-5 w-fit">
                 <div>
@@ -224,16 +328,14 @@ function RepDashboard({ user }) {
                 variant="secondary"
                 className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm"
               >
-                <PlayCircle className="w-4 h-4 mr-2" />
-                Start Session
+                <PlayCircle className="w-4 h-4 mr-2" /> Start Session
               </Button>
               <Button
                 onClick={() => router.push("/courses")}
                 variant="outline"
                 className="bg-white/10 text-white border-white/30 hover:bg-white/20 font-semibold"
               >
-                <BookOpen className="w-4 h-4 mr-2" />
-                Courses
+                <BookOpen className="w-4 h-4 mr-2" /> Courses
               </Button>
             </div>
           </CardContent>
@@ -309,7 +411,7 @@ function RepDashboard({ user }) {
               ) : openSessions.length === 0 ? (
                 <div className="py-10 text-center">
                   <PlayCircle className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-gray-400 dark:text-gray-500 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     No active sessions
                   </p>
                   <Button
@@ -325,7 +427,7 @@ function RepDashboard({ user }) {
                   <div
                     key={session.id}
                     onClick={() => router.push(`/sessions/${session.id}`)}
-                    className="flex items-center gap-3 py-3.5 border-b border-gray-50 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
+                    className="flex items-center gap-3 py-3.5 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
                   >
                     <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
                       <PlayCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -334,7 +436,7 @@ function RepDashboard({ user }) {
                       <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
                         {session.course?.name}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {session.attendance?.filter(
                           (a) => a.status === "PRESENT",
                         ).length || 0}{" "}
@@ -342,7 +444,7 @@ function RepDashboard({ user }) {
                       </p>
                     </div>
                     <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-0 text-xs font-bold flex-shrink-0">
-                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse inline-block" />
+                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse inline-block" />{" "}
                       LIVE
                     </Badge>
                   </div>
@@ -369,7 +471,7 @@ function RepDashboard({ user }) {
               {recentActivity.length === 0 ? (
                 <div className="py-10 text-center">
                   <Clock className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-gray-400 dark:text-gray-500 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     No activity yet
                   </p>
                 </div>
@@ -383,7 +485,7 @@ function RepDashboard({ user }) {
         </motion.div>
       </div>
 
-      {/* Quick members preview */}
+      {/* Members Preview */}
       {members.length > 0 && (
         <motion.div
           variants={fadeUp}
@@ -393,8 +495,8 @@ function RepDashboard({ user }) {
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-900 dark:text-white">
-              Class Members
-              <span className="ml-2 text-sm font-normal text-gray-400">
+              Class Members{" "}
+              <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                 ({members.length})
               </span>
             </h3>
@@ -413,7 +515,7 @@ function RepDashboard({ user }) {
                 {members.slice(0, 8).map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full"
+                    className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full"
                   >
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                       {member.user?.name?.[0]?.toUpperCase()}
@@ -439,7 +541,7 @@ function RepDashboard({ user }) {
   );
 }
 
-// ── Student Dashboard ──────────────────────────────────────
+// ── Student Dashboard Content ─────────────────────────────
 function StudentDashboard({ user }) {
   const router = useRouter();
 
@@ -461,17 +563,17 @@ function StudentDashboard({ user }) {
     enabled: !!user,
   });
 
-  const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
+  const { data: sessionsData } = useQuery({
     queryKey: ["class-sessions"],
     queryFn: async () => {
       const res = await api.get("/api/v1/sessions");
-      return res.data.data.sessions;
+      return res.data.data.sessions || [];
     },
     enabled: !!user,
     refetchInterval: 15000,
   });
 
-  const isLoading = classLoading || attendanceLoading || sessionsLoading;
+  const isLoading = classLoading || attendanceLoading;
   const classSpace = classData;
   const attendance = attendanceData?.attendance || [];
   const stats = attendanceData?.stats || [];
@@ -483,7 +585,7 @@ function StudentDashboard({ user }) {
   const overallPct =
     totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : null;
 
-  const greeting = () => {
+  const timeOfDay = () => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
     if (h < 17) return "Good afternoon";
@@ -491,7 +593,7 @@ function StudentDashboard({ user }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 lg:pb-6">
       {/* Hero */}
       <motion.div
         variants={fadeUp}
@@ -503,7 +605,7 @@ function StudentDashboard({ user }) {
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-2xl" />
           <CardContent className="relative z-10 p-6 sm:p-8">
             <Badge className="bg-white/20 text-white border-none text-xs mb-3">
-              {greeting()} 👋
+              {timeOfDay()} 👋
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-1">
               {user?.name?.split(" ")[0]}
@@ -522,8 +624,7 @@ function StudentDashboard({ user }) {
                   variant="secondary"
                   className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm"
                 >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Mark Attendance
+                  <MapPin className="w-4 h-4 mr-2" /> Mark Attendance
                   <Badge className="ml-2 bg-emerald-500 text-white border-none text-xs">
                     {openSessions.length} open
                   </Badge>
@@ -534,8 +635,7 @@ function StudentDashboard({ user }) {
                   variant="secondary"
                   className="bg-white text-blue-600 hover:bg-gray-100 font-bold shadow-sm"
                 >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  View Courses
+                  <BookOpen className="w-4 h-4 mr-2" /> View Courses
                 </Button>
               )}
             </div>
@@ -543,7 +643,7 @@ function StudentDashboard({ user }) {
         </Card>
       </motion.div>
 
-      {/* Open session alert */}
+      {/* Open Session Alert */}
       {openSessions.length > 0 && (
         <motion.div
           variants={fadeUp}
@@ -602,7 +702,7 @@ function StudentDashboard({ user }) {
         />
         <StatCard
           label="Classmates"
-          value={classSpace ? classSpace._count?.students || 0 : "—"}
+          value={classSpace?._count?.students || 0}
           icon={Users}
           color="amber"
           delay={5}
@@ -610,7 +710,7 @@ function StudentDashboard({ user }) {
         />
       </div>
 
-      {/* My attendance per course */}
+      {/* Attendance per Course */}
       {stats.length > 0 && (
         <motion.div
           variants={fadeUp}
@@ -663,7 +763,7 @@ function StudentDashboard({ user }) {
                           <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
                             {stat.courseName}
                           </p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                             {stat.courseCode}
                           </p>
                         </div>
@@ -685,7 +785,7 @@ function StudentDashboard({ user }) {
                         />
                       </div>
                       <div className="flex items-center justify-between mt-1.5">
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {stat.present} present · {stat.absent} absent
                         </p>
                         {pct < 75 && (
@@ -703,7 +803,7 @@ function StudentDashboard({ user }) {
         </motion.div>
       )}
 
-      {/* Recent activity */}
+      {/* Recent Activity */}
       {attendance.length > 0 && (
         <motion.div
           variants={fadeUp}
@@ -732,8 +832,8 @@ function StudentDashboard({ user }) {
                   <ActivityItem
                     key={record.id}
                     icon={isPresent ? CheckCircle2 : XCircle}
-                    title={`${record.session?.course?.name}`}
-                    sub={`Marked ${isPresent ? "present" : "absent"} · ${record.session?.course?.code}`}
+                    title={record.session?.course?.name || "Course"}
+                    sub={`Marked ${isPresent ? "present" : "absent"} · ${record.session?.course?.code || ""}`}
                     time={timeAgo(record.markedAt)}
                     color={isPresent ? "green" : "red"}
                   />
@@ -747,52 +847,32 @@ function StudentDashboard({ user }) {
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────
+// ── Main Dashboard Page ───────────────────────────────────
 export default function DashboardPage() {
-  const { user, isCourseRep, isStudent, _hasHydrated } = useAuth();
+  const { user, isRep, isStudent } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const greeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
-  };
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 pt-10 pb-4 sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h1 className="font-black text-gray-900 dark:text-white text-base leading-none">
-                Klassrep
-              </h1>
-              <p className="text-gray-400 dark:text-gray-500 text-xs">
-                {greeting()}, {user?.name?.split(" ")[0]}
-              </p>
-            </div>
-          </div>
-          <Badge
-            className={`text-xs font-bold ${
-              isCourseRep
-                ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-            }`}
-          >
-            {isCourseRep ? "Course Rep" : "Student"}
-          </Badge>
+      {/* Desktop Sidebar */}
+      <Sidebar user={user} isRep={isRep} pathname={pathname} />
+
+      {/* Main Content - Desktop with margin, Mobile without */}
+      <div className="lg:ml-72">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+          {isRep && <RepDashboard user={user} />}
+          {isStudent && <StudentDashboard user={user} />}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 sm:px-6 py-5 max-w-2xl mx-auto">
-        {isCourseRep && <RepDashboard user={user} />}
-        {isStudent && <StudentDashboard user={user} />}
-      </div>
+      {/* Mobile Bottom Tab Bar - Uses your existing layout's BottomTabBar */}
+      {/* The BottomTabBar is already in your app/(app)/layout.jsx */}
     </div>
   );
 }
