@@ -47,7 +47,7 @@ const fadeUp = {
   }),
 };
 
-function CourseCard({ course, onEdit, onDelete, isRep }) {
+function CourseCard({ course, onEdit, onDelete, isCourseRep }) {
   const router = useRouter();
   const sessionCount = course.sessions?.length || 0;
   const studentCount = course._count?.sessions || 0;
@@ -78,7 +78,7 @@ function CourseCard({ course, onEdit, onDelete, isRep }) {
               </p>
             </div>
             {/* Only show edit/delete options for reps */}
-            {isRep && (
+            {isCourseRep && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -195,15 +195,12 @@ function CreateCourseModal({ isOpen, onClose, onSuccess }) {
 }
 
 export default function CoursesPage() {
-  const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
-
-  // Check if user is a rep (only reps can create/manage courses)
-  const isRep = user?.role === "rep";
+  const { user, isCourseRep } = useAuth();
 
   // Fetch courses
   const { data: response, isLoading } = useQuery({
@@ -253,13 +250,13 @@ export default function CoursesPage() {
             Courses
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            {isRep
+            {isCourseRep
               ? "Manage all the courses in your class"
               : "Browse all available courses"}
           </p>
         </div>
         {/* Only show New Course button for reps */}
-        {isRep && (
+        {isCourseRep && (
           <Button onClick={() => setShowCreateModal(true)} className="gap-2">
             <Plus className="w-4 h-4" />
             New Course
@@ -301,7 +298,7 @@ export default function CoursesPage() {
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
               {search
                 ? "Try a different search term"
-                : isRep
+                : isCourseRep
                   ? "Create your first course to get started"
                   : "Check back later for new courses"}
             </p>
@@ -315,14 +312,14 @@ export default function CoursesPage() {
               course={course}
               onEdit={setEditingCourse}
               onDelete={handleDelete}
-              isRep={isRep}
+              isCourseRep={isCourseRep}
             />
           ))}
         </div>
       )}
 
       {/* Create Modal - Only shown to reps */}
-      {isRep && (
+      {isCourseRep && (
         <CreateCourseModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}

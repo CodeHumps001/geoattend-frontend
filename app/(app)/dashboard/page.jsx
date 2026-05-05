@@ -188,7 +188,7 @@ function RepDashboard({ user }) {
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6">
       {/* Hero */}
       <motion.div
         variants={fadeUp}
@@ -507,7 +507,7 @@ function StudentDashboard({ user }) {
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6">
       {/* Hero */}
       <motion.div
         variants={fadeUp}
@@ -759,36 +759,16 @@ function StudentDashboard({ user }) {
 }
 
 // ── Main Dashboard Page ─────────────────────────────────────
+// ── Main Dashboard Page ─────────────────────────────────────
 export default function DashboardPage() {
   const { user, isCourseRep, isStudent } = useAuth();
-  const pathname = usePathname();
 
   if (!user) return null;
 
   return (
-    <>
-      {/* Main Content */}
-      <div className="lg:pl-64">
-        {/* Mobile Header with Menu */}
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 lg:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-black text-gray-900 dark:text-white">
-                Klassrep
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Dashboard Content */}
-        <div className="p-4 md:p-6">
-          {isCourseRep && <RepDashboard user={user} />}
-          {isStudent && <StudentDashboard user={user} />}
-        </div>
-      </div>
-    </>
+    <div className="space-y-6">
+      {isCourseRep && <RepDashboard user={user} />}
+      {isStudent && <StudentDashboard user={user} />}
+    </div>
   );
 }

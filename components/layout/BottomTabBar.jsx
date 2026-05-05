@@ -9,7 +9,7 @@ import {
   PlayCircle,
   Users,
   User,
-  CheckSquare,
+  MapPin,
   Clock,
 } from "lucide-react";
 
@@ -24,7 +24,7 @@ const REP_TABS = [
 const STUDENT_TABS = [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "Courses", icon: BookOpen, path: "/courses" },
-  { label: "Attendance", icon: CheckSquare, path: "/attendance" },
+  { label: "Attendance", icon: MapPin, path: "/attendance" },
   { label: "History", icon: Clock, path: "/history" },
   { label: "Profile", icon: User, path: "/profile" },
 ];
@@ -37,8 +37,8 @@ export default function BottomTabBar() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/60 dark:border-gray-800/60" />
-      <div className="relative z-10 max-w-lg mx-auto px-2 py-1.5">
+      <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800" />
+      <div className="relative z-10 max-w-lg mx-auto px-1 py-1.5">
         <div className="flex items-center justify-around">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -71,10 +71,18 @@ export default function BottomTabBar() {
                   )}
                 </AnimatePresence>
                 <Icon
-                  className={`relative z-10 w-5 h-5 transition-colors ${isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+                  className={`relative z-10 w-5 h-5 transition-colors ${
+                    isActive
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
                 />
                 <span
-                  className={`relative z-10 text-[10px] font-semibold transition-colors ${isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+                  className={`relative z-10 text-[10px] font-semibold transition-colors ${
+                    isActive
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
                 >
                   {tab.label}
                 </span>

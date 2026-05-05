@@ -105,7 +105,7 @@ function QuickStat({ label, value, icon: Icon }) {
 }
 
 export default function ProfilePage() {
-  const { user, isRep, isStudent } = useAuth();
+  const { user, isCourseRep, isStudent } = useAuth();
   const { logout } = useAuthStore();
   const router = useRouter();
 
@@ -113,7 +113,7 @@ export default function ProfilePage() {
   const { data: classResponse, isLoading: classLoading } = useQuery({
     queryKey: ["profile-class"],
     queryFn: async () => {
-      if (isRep) {
+      if (isCourseRep) {
         const res = await api.get("/api/v1/class/me");
         return res.data.data;
       } else {
@@ -182,6 +182,7 @@ export default function ProfilePage() {
       title: "Student Dashboard",
     },
     COURSE_REP: {
+      // ← must match exactly
       gradient: "from-emerald-500 to-teal-600",
       badge:
         "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
@@ -275,7 +276,7 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* Stats Cards */}
-          {isRep && (
+          {isCourseRep && (
             <div className="grid grid-cols-2 gap-3">
               <StatsCard
                 title="Students"
@@ -351,7 +352,7 @@ export default function ProfilePage() {
                 <InfoRow
                   icon={Shield}
                   label="Role"
-                  value={isRep ? "Course Rep" : "Student"}
+                  value={isCourseRep ? "Course Rep" : "Student"}
                   loading={false}
                 />
                 <InfoRow
@@ -408,7 +409,7 @@ export default function ProfilePage() {
                   value={classSpace?.academicYear || "—"}
                   loading={classLoading}
                 />
-                {isRep && classSpace?.classCode && (
+                {isCourseRep && classSpace?.classCode && (
                   <div className="mt-4 pt-2">
                     <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-xl p-4">
                       <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mb-1">
@@ -441,7 +442,7 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* Course Rep Specific - Course Stats */}
-          {isRep && attendanceStats?.stats?.length > 0 && (
+          {isCourseRep && attendanceStats?.stats?.length > 0 && (
             <motion.div
               variants={fadeUp}
               custom={5}
