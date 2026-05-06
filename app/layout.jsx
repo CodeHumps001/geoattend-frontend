@@ -65,12 +65,13 @@ export const metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
-    apple: "/apple-touch-icon.png",
+    icon: "/klassrep.png",
+    shortcut: "/klassrep.png",
+    apple: "/klassrep.png",
   },
   manifest: "/site.webmanifest",
   verification: {
+    "google-site-verification": "googlebce795757b0ef5e3.html",
     // Add your Google Search Console verification code here after you verify
     // google: "your-verification-code",
   },
