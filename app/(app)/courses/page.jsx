@@ -38,12 +38,6 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/axios";
 
-export const metadata = {
-  title: "Courses",
-  description: "View and manage your class courses on KlassRep.",
-  robots: { index: false },
-};
-
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({

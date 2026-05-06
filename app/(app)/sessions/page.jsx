@@ -46,12 +46,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 
-export const metadata = {
-  title: "Sessions",
-  description: "Start and manage attendance sessions for your class.",
-  robots: { index: false },
-};
-
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({

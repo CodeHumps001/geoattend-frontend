@@ -10,12 +10,6 @@ import api from "@/lib/axios";
 import useAuthStore from "@/store/authStore";
 import Image from "next/image";
 
-export const metadata = {
-  title: "Sign In",
-  description:
-    "Sign in to your KlassRep account to manage your class or track your attendance.",
-};
-
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();

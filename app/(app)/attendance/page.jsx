@@ -26,12 +26,6 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 
-export const metadata = {
-  title: "Mark Attendance",
-  description: "Mark your GPS-verified attendance for active class sessions.",
-  robots: { index: false },
-};
-
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({

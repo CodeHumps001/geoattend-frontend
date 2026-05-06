@@ -29,19 +29,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import Image from "next/image";
 
-export const metadata = {
-  title: "KlassRep — Smart Class Attendance Built Around Your Course Rep",
-  description:
-    "KlassRep puts your course rep in charge of attendance. GPS-verified, fraud-proof, and live. Join your class with a code, mark attendance in one tap.",
-  openGraph: {
-    title: "KlassRep — Smart Class Attendance Built Around Your Course Rep",
-    description:
-      "GPS-powered attendance built around course reps. Join class with a code. Mark attendance in one tap. Track your percentage live.",
-    url: "https://klassrep.vercel.app",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
-  },
-};
-
 // ── Animation variants ────────────────────────────────────
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
