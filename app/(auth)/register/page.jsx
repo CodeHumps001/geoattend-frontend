@@ -31,6 +31,12 @@ import api from "@/lib/axios";
 import useAuthStore from "@/store/authStore";
 import Image from "next/image";
 
+export const metadata = {
+  title: "Create Account",
+  description:
+    "Create your KlassRep account. Course reps set up their class space. Students join with their class code.",
+};
+
 const slideIn = {
   hidden: { opacity: 0, x: 30 },
   visible: {

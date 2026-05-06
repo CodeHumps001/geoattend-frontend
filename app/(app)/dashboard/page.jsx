@@ -33,6 +33,13 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import useAuthStore from "@/store/authStore";
 
+export const metadata = {
+  title: "Dashboard",
+  description:
+    "Your KlassRep class dashboard — manage sessions, track attendance, and view your class.",
+  robots: { index: false }, // Don't index protected pages
+};
+
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({

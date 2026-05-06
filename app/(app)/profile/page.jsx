@@ -30,6 +30,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/lib/axios";
 import useAuthStore from "@/store/authStore";
 
+export const metadata = {
+  title: "Profile",
+  description: "Manage your KlassRep account and view your stats.",
+  robots: { index: false },
+};
+
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({

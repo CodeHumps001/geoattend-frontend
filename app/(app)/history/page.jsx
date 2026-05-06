@@ -42,6 +42,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 
+export const metadata = {
+  title: "Attendance History",
+  description: "View your full attendance history across all courses.",
+  robots: { index: false },
+};
+
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
