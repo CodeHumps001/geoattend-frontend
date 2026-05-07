@@ -19,6 +19,8 @@ const REP_TABS = [
   { label: "Sessions", icon: PlayCircle, path: "/sessions" },
   { label: "Members", icon: Users, path: "/members" },
   { label: "Profile", icon: User, path: "/profile" },
+  { label: "Attendance", icon: MapPin, path: "/attendance" },
+  { label: "History", icon: Clock, path: "/history" },
 ];
 
 const ASSISTANT_TABS = [
@@ -27,6 +29,7 @@ const ASSISTANT_TABS = [
   { label: "Sessions", icon: PlayCircle, path: "/sessions" },
   { label: "Attendance", icon: MapPin, path: "/attendance" },
   { label: "Profile", icon: User, path: "/profile" },
+  { label: "History", icon: Clock, path: "/history" },
 ];
 
 const STUDENT_TABS = [
