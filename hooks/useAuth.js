@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/authStore";
+import api from "@/lib/axios";
 
 export function useAuth() {
   const router = useRouter();
@@ -21,12 +23,13 @@ export function useAuth() {
   const isCourseRep = user?.role === "COURSE_REP";
   const isStudent = user?.role === "STUDENT";
 
-  // Check if student is an assistant rep
-  const isAssistantRep = isStudent && !!user?.student?.assistantRep;
+  // 🔥 Check assistantRep inside student object
+  const isAssistantRep = isStudent && user?.student?.assistantRep != null;
 
   // Can manage sessions = main rep OR assistant rep
   const canManageSessions = isCourseRep || isAssistantRep;
 
+  // Class space — rep uses their classSpace, assistant uses assigned classSpace
   const classSpace = isCourseRep
     ? user?.courseRep?.classSpace
     : isAssistantRep

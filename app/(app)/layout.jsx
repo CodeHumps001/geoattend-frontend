@@ -1,24 +1,44 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-
-import DesktopSidebar from "@/components/layout/DesktopSidebar";
-import ProtectedRoute from "@/components/layout/ProtectedRoutes";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import BottomTabBar from "@/components/layout/BottomTabBar";
+import DesktopSidebar from "@/components/layout/DesktopSidebar";
+import api from "@/lib/axios";
+import useAuthStore from "@/store/authStore";
 import Image from "next/image";
 
 export default function AppLayout({ children }) {
   const pathname = usePathname();
-  const { user, isCourseRep } = useAuth();
+  const { user, isCourseRep, isAssistantRep } = useAuth();
+  const { updateUser } = useAuthStore();
+
+  // 🔥 Refresh user data on every app load
+  // This ensures assistant rep status is always current
+  useEffect(() => {
+    const refreshUser = async () => {
+      try {
+        const res = await api.get("/api/v1/auth/me");
+        const freshUser = res.data.data.user;
+        updateUser(freshUser);
+      } catch (err) {
+        // If token expired, the axios interceptor handles redirect to login
+        console.error("Failed to refresh user:", err);
+      }
+    };
+
+    if (user) {
+      refreshUser();
+    }
+  }, []); // Only on mount
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        {/* Desktop Sidebar — hidden on mobile */}
         <DesktopSidebar user={user} isRep={isCourseRep} pathname={pathname} />
 
-        {/* Main content — offset by sidebar on desktop */}
         <div className="lg:pl-64">
           {/* Mobile header */}
           <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 lg:hidden">
@@ -37,19 +57,29 @@ export default function AppLayout({ children }) {
                   KlassRep
                 </span>
               </div>
-              <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                {isCourseRep ? "Rep" : "Student"}
+              <div
+                className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                  isCourseRep
+                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                    : isAssistantRep
+                      ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                }`}
+              >
+                {isCourseRep
+                  ? "Course Rep"
+                  : isAssistantRep
+                    ? "Asst. Rep ⭐"
+                    : "Student"}
               </div>
             </div>
           </div>
 
-          {/* Page content */}
           <main className="p-4 md:p-6 pb-24 lg:pb-8 max-w-7xl mx-auto">
             {children}
           </main>
         </div>
 
-        {/* Bottom tab bar — mobile only */}
         <div className="lg:hidden">
           <BottomTabBar />
         </div>

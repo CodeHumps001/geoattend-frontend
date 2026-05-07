@@ -21,6 +21,14 @@ const REP_TABS = [
   { label: "Profile", icon: User, path: "/profile" },
 ];
 
+const ASSISTANT_TABS = [
+  { label: "Home", icon: Home, path: "/dashboard" },
+  { label: "Courses", icon: BookOpen, path: "/courses" },
+  { label: "Sessions", icon: PlayCircle, path: "/sessions" },
+  { label: "Attendance", icon: MapPin, path: "/attendance" },
+  { label: "Profile", icon: User, path: "/profile" },
+];
+
 const STUDENT_TABS = [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "Courses", icon: BookOpen, path: "/courses" },
@@ -32,18 +40,13 @@ const STUDENT_TABS = [
 export default function BottomTabBar() {
   const pathname = usePathname();
   const router = useRouter();
-  // To this:
   const { isCourseRep, isAssistantRep } = useAuth();
+
+  // 🔥 Pick tabs based on role
   const tabs = isCourseRep
     ? REP_TABS
     : isAssistantRep
-      ? [
-          { label: "Home", icon: Home, path: "/dashboard" },
-          { label: "Courses", icon: BookOpen, path: "/courses" },
-          { label: "Sessions", icon: PlayCircle, path: "/sessions" }, // ← assistant gets this
-          { label: "Attendance", icon: MapPin, path: "/attendance" },
-          { label: "Profile", icon: User, path: "/profile" },
-        ]
+      ? ASSISTANT_TABS
       : STUDENT_TABS;
 
   return (
