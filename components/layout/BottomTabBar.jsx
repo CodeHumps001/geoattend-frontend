@@ -16,17 +16,17 @@ import {
 const REP_TABS = [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "Courses", icon: BookOpen, path: "/courses" },
+  { label: "Attendance", icon: MapPin, path: "/attendance" },
   { label: "Sessions", icon: PlayCircle, path: "/sessions" },
   { label: "Members", icon: Users, path: "/members" },
   { label: "Profile", icon: User, path: "/profile" },
-  { label: "Attendance", icon: MapPin, path: "/attendance" },
 ];
 
 const ASSISTANT_TABS = [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "Courses", icon: BookOpen, path: "/courses" },
-  { label: "Sessions", icon: PlayCircle, path: "/sessions" },
   { label: "Attendance", icon: MapPin, path: "/attendance" },
+  { label: "Sessions", icon: PlayCircle, path: "/sessions" },
   { label: "Profile", icon: User, path: "/profile" },
 ];
 
