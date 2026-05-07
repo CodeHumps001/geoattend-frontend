@@ -101,7 +101,7 @@ export default function DesktopSidebar({ user, isRep, isAssis, pathname }) {
                   : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
               }`}
             >
-              {isRep ? "Course Rep" : "Student"}
+              {isRep ? "Course Rep" : isAssis ? "Assistant Rep" : "Student"}
             </span>
           </div>
         </div>
