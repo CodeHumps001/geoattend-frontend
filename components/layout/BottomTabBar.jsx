@@ -32,8 +32,19 @@ const STUDENT_TABS = [
 export default function BottomTabBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isCourseRep } = useAuth();
-  const tabs = isCourseRep ? REP_TABS : STUDENT_TABS;
+  // To this:
+  const { isCourseRep, isAssistantRep } = useAuth();
+  const tabs = isCourseRep
+    ? REP_TABS
+    : isAssistantRep
+      ? [
+          { label: "Home", icon: Home, path: "/dashboard" },
+          { label: "Courses", icon: BookOpen, path: "/courses" },
+          { label: "Sessions", icon: PlayCircle, path: "/sessions" }, // ← assistant gets this
+          { label: "Attendance", icon: MapPin, path: "/attendance" },
+          { label: "Profile", icon: User, path: "/profile" },
+        ]
+      : STUDENT_TABS;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">

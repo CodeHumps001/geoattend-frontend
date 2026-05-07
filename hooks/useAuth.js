@@ -21,10 +21,17 @@ export function useAuth() {
   const isCourseRep = user?.role === "COURSE_REP";
   const isStudent = user?.role === "STUDENT";
 
-  // Course rep's class space
+  // Check if student is an assistant rep
+  const isAssistantRep = isStudent && !!user?.student?.assistantRep;
+
+  // Can manage sessions = main rep OR assistant rep
+  const canManageSessions = isCourseRep || isAssistantRep;
+
   const classSpace = isCourseRep
     ? user?.courseRep?.classSpace
-    : user?.student?.classSpace;
+    : isAssistantRep
+      ? user?.student?.assistantRep?.classSpace
+      : user?.student?.classSpace;
 
   const classCode = classSpace?.classCode;
 
@@ -38,6 +45,8 @@ export function useAuth() {
     logout: handleLogout,
     isCourseRep,
     isStudent,
+    isAssistantRep,
+    canManageSessions,
     classSpace,
     classCode,
   };
