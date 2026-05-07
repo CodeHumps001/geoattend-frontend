@@ -19,6 +19,7 @@ const sidebarLinks = {
   rep: [
     { label: "Dashboard", icon: Zap, href: "/dashboard" },
     { label: "Courses", icon: BookOpen, href: "/courses" },
+    { label: "Attendance", icon: MapPin, href: "/attendance" },
     { label: "Sessions", icon: PlayCircle, href: "/sessions" },
     { label: "Members", icon: Users, href: "/members" },
     { label: "Profile", icon: GraduationCap, href: "/profile" },
@@ -30,12 +31,23 @@ const sidebarLinks = {
     { label: "History", icon: Clock, href: "/history" },
     { label: "Profile", icon: GraduationCap, href: "/profile" },
   ],
+  assisrep: [
+    { label: "Dashboard", icon: Zap, href: "/dashboard" },
+    { label: "Courses", icon: BookOpen, href: "/courses" },
+    { label: "Attendance", icon: MapPin, href: "/attendance" },
+    { label: "Sessions", icon: PlayCircle, href: "/sessions" },
+    { label: "Profile", icon: GraduationCap, href: "/profile" },
+  ],
 };
 
-export default function DesktopSidebar({ user, isRep, pathname }) {
+export default function DesktopSidebar({ user, isRep, isAssis, pathname }) {
   const router = useRouter();
   const { logout } = useAuth();
-  const links = isRep ? sidebarLinks.rep : sidebarLinks.student;
+  const links = isRep
+    ? sidebarLinks.rep
+    : isAssis
+      ? sidebarLinks.assisrep
+      : sidebarLinks.student;
 
   const initials =
     user?.name

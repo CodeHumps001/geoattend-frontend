@@ -38,7 +38,12 @@ export default function AppLayout({ children }) {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <DesktopSidebar user={user} isRep={isCourseRep} pathname={pathname} />
+        <DesktopSidebar
+          user={user}
+          isRep={isCourseRep}
+          isAssis={isAssistantRep}
+          pathname={pathname}
+        />
 
         <div className="lg:pl-64">
           {/* Mobile header */}
