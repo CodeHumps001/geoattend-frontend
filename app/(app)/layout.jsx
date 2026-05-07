@@ -3,12 +3,13 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import ProtectedRoute from "@/components/layout/ProtectedRoute";
+
 import BottomTabBar from "@/components/layout/BottomTabBar";
 import DesktopSidebar from "@/components/layout/DesktopSidebar";
 import api from "@/lib/axios";
 import useAuthStore from "@/store/authStore";
 import Image from "next/image";
+import ProtectedRoute from "@/components/layout/ProtectedRoutes";
 
 export default function AppLayout({ children }) {
   const pathname = usePathname();
