@@ -94,7 +94,7 @@ function SessionItem({ session }) {
 export default function CourseDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isCourseRep, isAssistantRep } = useAuth();
 
   // Fetch course details - matches backend response structure
   const { data: response, isLoading } = useQuery({
@@ -146,6 +146,11 @@ export default function CourseDetailPage() {
     totalAttendance > 0
       ? Math.round((presentCount / totalAttendance) * 100)
       : 0;
+
+  if (!isAssistantRep || !isCourseRep) {
+    // Moves the browser back one page in history
+    window.history.back();
+  }
 
   return (
     <div className="space-y-6 pb-24">
@@ -207,7 +212,7 @@ export default function CourseDetailPage() {
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Sessions
           </h2>
-          <Button size="sm" onClick={() => router.push("/sessions/new")}>
+          <Button size="sm" onClick={() => router.push("/sessions")}>
             <PlayCircle className="w-4 h-4 mr-2" />
             Start Session
           </Button>
