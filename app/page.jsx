@@ -500,7 +500,7 @@ export default function LandingPage() {
                 <strong className="text-gray-900 dark:text-white">
                   course rep
                 </strong>{" "}
-                in charge of attendance — the person already doing this job in
+                in charge of attendance the person already doing this job in
                 real life. GPS-verified, fraud-proof, and live.
               </motion.p>
 
@@ -786,7 +786,7 @@ export default function LandingPage() {
                     Three steps to modern attendance
                   </h2>
                   <p className="text-gray-600 dark:text-slate-400 text-lg leading-relaxed">
-                    No hardware. No paper. No manual entry. Just open KlassRep —
+                    No hardware. No paper. No manual entry. Just open KlassRep
                     your course rep handles everything.
                   </p>
                 </motion.div>
@@ -797,13 +797,13 @@ export default function LandingPage() {
             <StepCard
               number={1}
               title="Course rep creates the class"
-              desc="The course rep registers and gets a unique class code. They share it with classmates on WhatsApp — students join in seconds."
+              desc="The course rep registers and gets a unique class code. They share it with classmates on WhatsApp  students join in seconds."
               delay={0}
             />
             <StepCard
               number={2}
               title="Rep starts a session, students mark in"
-              desc="When class begins, the rep opens KlassRep and taps Start Session. Students mark attendance with one tap — GPS checks they're physically there."
+              desc="When class begins, the rep opens KlassRep and taps Start Session. Students mark attendance with one tap  GPS checks they're physically there."
               delay={1}
             />
             <StepCard
@@ -834,7 +834,7 @@ export default function LandingPage() {
               delay={0}
               icon={<MapPin className="w-5 h-5" />}
               title="GPS Verification"
-              desc="Real GPS coordinates checked on every mark — students can't fake being in class from their hostel room."
+              desc="Real GPS coordinates checked on every mark  students can't fake being in class from their hostel room."
             />
             <FeatureCard
               delay={1}
@@ -858,19 +858,19 @@ export default function LandingPage() {
               delay={4}
               icon={<Copy className="w-5 h-5" />}
               title="Class Code System"
-              desc="Course rep gets a unique class code. Students join by entering it — no admin bottleneck."
+              desc="Course rep gets a unique class code. Students join by entering it no admin bottleneck."
             />
             <FeatureCard
               delay={5}
               icon={<Users className="w-5 h-5" />}
               title="Role-based Access"
-              desc="Course reps manage. Students mark. Each role sees exactly what they need — nothing more."
+              desc="Course reps manage. Students mark. Each role sees exactly what they need  nothing more."
             />
             <FeatureCard
               delay={6}
               icon={<Smartphone className="w-5 h-5" />}
               title="Mobile Friendly"
-              desc="Fully responsive web app that works beautifully on any device — phone, tablet, or desktop."
+              desc="Fully responsive web app that works beautifully on any device  phone, tablet, or desktop."
             />
             <FeatureCard
               delay={7}
@@ -966,7 +966,7 @@ export default function LandingPage() {
               name="Kofi Mensah"
               role="Student"
               school="KsTU IT Level 200"
-              quote="Joining my class was so easy — my rep dropped the class code in our WhatsApp group and I was in within a minute. The GPS check is really smart."
+              quote="Joining my class was so easy my rep dropped the class code in our WhatsApp group and I was in within a minute. The GPS check is really smart."
               avatar="https://i.pravatar.cc/100?img=8"
             />
           </div>
@@ -1046,7 +1046,7 @@ export default function LandingPage() {
               </div>
               <p className="text-gray-500 dark:text-slate-500 text-sm leading-relaxed">
                 Attendance management built around the people already doing the
-                job — your course rep.
+                job your course rep.
               </p>
             </div>
             <div>
