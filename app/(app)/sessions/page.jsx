@@ -610,6 +610,10 @@ export default function SessionsPage() {
     router.push(`/sessions/${sessionId}`);
   };
 
+  if (!isAssistantRep || !isCourseRep) {
+    // Moves the browser back one page in history
+    window.history.back();
+  }
   return (
     <div className="space-y-6 pb-10">
       {/* Header */}

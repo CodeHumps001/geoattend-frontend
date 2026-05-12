@@ -147,11 +147,6 @@ export default function CourseDetailPage() {
       ? Math.round((presentCount / totalAttendance) * 100)
       : 0;
 
-  if (!isAssistantRep || !isCourseRep) {
-    // Moves the browser back one page in history
-    window.history.back();
-  }
-
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
