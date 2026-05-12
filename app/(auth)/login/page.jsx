@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import api from "@/lib/axios";
 import useAuthStore from "@/store/authStore";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,20 +54,22 @@ export default function LoginPage() {
         </div>
 
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
-            <Image
-              src="/klassrep.png"
-              alt="KlassRep Logo"
-              width={55}
-              height={55}
-              className="object-cover rounded"
-            />
+        <Link href={"/"}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+              <Image
+                src="/klassrep.png"
+                alt="KlassRep Logo"
+                width={55}
+                height={55}
+                className="object-cover rounded"
+              />
+            </div>
+            <span className="text-gray-900 dark:text-white font-black text-lg">
+              KlassRep
+            </span>
           </div>
-          <span className="text-gray-900 dark:text-white font-black text-lg">
-            KlassRep
-          </span>
-        </div>
+        </Link>
 
         {/* Center content */}
         <div className="relative z-10">
@@ -163,20 +166,22 @@ export default function LoginPage() {
           className="w-full max-w-md"
         >
           {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
-              <Image
-                src="/klassrep.png"
-                alt="KlassRep Logo"
-                width={55}
-                height={55}
-                className="object-cover rounded"
-              />
+          <Link href={"/"}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 flex items-center justify-center shadow-2xl overflow-hidden rounded-xl">
+                <Image
+                  src="/klassrep.png"
+                  alt="KlassRep Logo"
+                  width={55}
+                  height={55}
+                  className="object-cover rounded"
+                />
+              </div>
+              <span className="text-gray-900 dark:text-white font-black text-lg">
+                KlassRep
+              </span>
             </div>
-            <span className="text-gray-900 dark:text-white font-black text-lg">
-              KlassRep
-            </span>
-          </div>
+          </Link>
 
           <div className="mb-8">
             <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">
