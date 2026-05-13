@@ -94,7 +94,7 @@ function SessionItem({ session }) {
 export default function CourseDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { user, isCourseRep, isAssistantRep } = useAuth();
+  const { user, isCourseRep, isAssistantRep, isStudent } = useAuth();
 
   // Fetch course details - matches backend response structure
   const { data: response, isLoading } = useQuery({
@@ -207,10 +207,10 @@ export default function CourseDetailPage() {
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Sessions
           </h2>
-          <Button size="sm" onClick={() => router.push("/sessions")}>
+          {isStudent ? "" : <Button size="sm" onClick={() => router.push("/sessions")}>
             <PlayCircle className="w-4 h-4 mr-2" />
             Start Session
-          </Button>
+          </Button>}
         </div>
 
         {sessions.length === 0 ? (
