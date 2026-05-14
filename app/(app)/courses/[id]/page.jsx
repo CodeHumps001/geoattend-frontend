@@ -55,7 +55,7 @@ function StatBox({ label, value, icon: Icon }) {
 
 function SessionItem({ session }) {
   const router = useRouter();
-  const { isStudent } = useAuth();
+  const { isStudent, isAssistantRep, isCourseRep } = useAuth();
   const presentCount =
     session.attendance?.filter((a) => a.status === "PRESENT").length || 0;
   const totalCount = session.attendance?.length || 0;
@@ -91,7 +91,7 @@ function SessionItem({ session }) {
             </div>
           </div>
         </div>
-      ) : (
+      ) : isAssistantRep || isCourseRep ? (
         <div
           onClick={() => router.push(`/sessions/${session.id}`)}
           className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-all"
@@ -119,6 +119,8 @@ function SessionItem({ session }) {
             </div>
           </div>
         </div>
+      ) : (
+        ""
       )}
     </>
   );
@@ -240,10 +242,14 @@ export default function CourseDetailPage() {
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Sessions
           </h2>
-          {isStudent ? "" : <Button size="sm" onClick={() => router.push("/sessions")}>
-            <PlayCircle className="w-4 h-4 mr-2" />
-            Start Session
-          </Button>}
+          {isStudent ? (
+            ""
+          ) : (
+            <Button size="sm" onClick={() => router.push("/sessions")}>
+              <PlayCircle className="w-4 h-4 mr-2" />
+              Start Session
+            </Button>
+          )}
         </div>
 
         {sessions.length === 0 ? (
