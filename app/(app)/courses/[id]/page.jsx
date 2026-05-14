@@ -62,8 +62,7 @@ function SessionItem({ session }) {
   const attendanceRate = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
 
   return (
-  
-     <>
+    <>
       {isAssistantRep || isCourseRep ? (
         <div
           onClick={() => router.push(`/sessions/${session.id}`)}
@@ -94,7 +93,7 @@ function SessionItem({ session }) {
         </div>
       ) : (
         <div
-          onClick={()=> toast.error("You're not authorized for ths page")}
+          onClick={() => toast.error("You're not authorized for ths page")}
           className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-all"
         >
           <div className="flex items-center gap-3">
@@ -120,10 +119,10 @@ function SessionItem({ session }) {
             </div>
           </div>
         </div>
-      )}</>
-    
+      )}
+    </>
   );
-
+}
 
 export default function CourseDetailPage() {
   const { id } = useParams();
