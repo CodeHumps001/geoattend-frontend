@@ -552,7 +552,7 @@ export default function RegisterPage() {
                   </InputField>
 
                   <InputField
-                    label="Student ID"
+                    label="Student ID(use your real student number)"
                     icon={Hash}
                     error={errors.studentId?.message}
                   >
@@ -560,7 +560,7 @@ export default function RegisterPage() {
                       {...register("studentId", {
                         required: "Student ID is required",
                       })}
-                      placeholder="KsTU/CS/21/001"
+                      placeholder="eg 052342900000"
                       className={`w-full bg-white dark:bg-gray-900 border ${
                         errors.studentId
                           ? "border-red-500 dark:border-red-500"
