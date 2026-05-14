@@ -62,36 +62,9 @@ function SessionItem({ session }) {
   const attendanceRate = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
 
   return (
-    <>
-      {isStudent ? (
-        <div
-          onClick={() => toast.error(`You're not authorize to visit that page`)}
-          className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <PlayCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {new Date(session.date).toLocaleDateString()}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {new Date(session.startTime).toLocaleTimeString()} -{" "}
-                {new Date(session.endTime).toLocaleTimeString()}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {presentCount}/{totalCount}
-            </p>
-            <div className="w-20 mt-1">
-              <Progress value={attendanceRate} className="h-1" />
-            </div>
-          </div>
-        </div>
-      ) : isAssistantRep || isCourseRep ? (
+  
+     <>
+      {isAssistantRep || isCourseRep ? (
         <div
           onClick={() => router.push(`/sessions/${session.id}`)}
           className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-all"
@@ -120,11 +93,37 @@ function SessionItem({ session }) {
           </div>
         </div>
       ) : (
-        ""
-      )}
-    </>
+        <div
+          onClick={()=> toast.error("You're not authorized for ths page")}
+          className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <PlayCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {new Date(session.date).toLocaleDateString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {new Date(session.startTime).toLocaleTimeString()} -{" "}
+                {new Date(session.endTime).toLocaleTimeString()}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {presentCount}/{totalCount}
+            </p>
+            <div className="w-20 mt-1">
+              <Progress value={attendanceRate} className="h-1" />
+            </div>
+          </div>
+        </div>
+      )}</>
+    
   );
-}
+
 
 export default function CourseDetailPage() {
   const { id } = useParams();
